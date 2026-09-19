@@ -46,10 +46,7 @@ LMS/ (Root Directory)
 ├── 📖 Documentation
 │   ├── README.md                              # Project overview & quick start
 │   ├── docs/project-structure.md              # This file (complete guide)
-│   ├── docs/architecture.md                   # Architecture vision & roadmap
-│   ├── docs/migration-plan.md                 # Future migration plan
-│   ├── docs/learning/zero-to-lms.md           # Developer learning guide
-│   └── docs/learning/zero-to-lms-python.md    # Python-specific learning
+│   └── docs/architecture.md                   # Architecture vision & roadmap
 │
 ├── 📁 apps/                                   # Core Django Applications (8 apps)
 │   ├── __init__.py
@@ -303,9 +300,6 @@ LMS/ (Root Directory)
 |------|---------|
 | `README.md` | Main project overview, quick start, and module documentation |
 | `docs/architecture.md` | Long-term architecture vision and feature planning |
-| `docs/migration-plan.md` | Future tech stack modernization roadmap |
-| `docs/learning/zero-to-lms.md` | Learning path for new developers on the LMS |
-| `docs/learning/zero-to-lms-python.md` | Python-specific learning resources for the project |
 
 ---
 

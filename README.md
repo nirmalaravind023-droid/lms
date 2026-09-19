@@ -49,7 +49,7 @@ streamlit_dashboard/  Separate analytics demo
 docs/                 Project documentation and plans
 ```
 
-See [architecture](docs/architecture.md), [project structure](docs/project-structure.md), [development guidance](CONTRIBUTING.md), and [migration plan](docs/migration-plan.md).
+See [architecture](docs/architecture.md), [project structure](docs/project-structure.md), and [development guidance](CONTRIBUTING.md).
 
 For a concise request and data-flow overview, see [Architecture Overview](docs/architecture-overview.md).
 
@@ -152,11 +152,8 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. To report
 
 ## Roadmap and documentation
 
-- [Architecture roadmap](docs/architecture.md)
+- [Architecture](docs/architecture.md)
 - [Project structure guide](docs/project-structure.md)
-- [Migration plan](docs/migration-plan.md)
-- [Learning roadmap](docs/learning/zero-to-lms.md)
-- [Python learning roadmap](docs/learning/zero-to-lms-python.md)
 - [Current roadmap](docs/roadmap.md)
 - [Known issues](docs/known-issues.md)
 - [Troubleshooting](docs/troubleshooting.md)
