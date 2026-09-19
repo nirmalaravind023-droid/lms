@@ -154,6 +154,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. To report
 
 - [Architecture](docs/architecture.md)
 - [Backup and restore policy](docs/backup-and-restore.md)
+- [Media storage policy](docs/media-storage-policy.md)
 - [Project structure guide](docs/project-structure.md)
 - [Current roadmap](docs/roadmap.md)
 - [Known issues](docs/known-issues.md)
