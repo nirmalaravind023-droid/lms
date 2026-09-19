@@ -126,7 +126,7 @@ streamlit run streamlit_dashboard/app.py
 docker compose up --build
 ```
 
-This starts the Django application, PostgreSQL, Redis, and Streamlit services. The Compose configuration is intended for local development and currently uses Django's development server.
+This starts the Django application, PostgreSQL, Redis, and Streamlit services. Docker Compose explicitly points Django at the `db` PostgreSQL service and Redis at the `redis` service, even when your local `.env` keeps `DATABASE_ENGINE=sqlite` for non-Docker development. The Compose configuration is intended for local development and currently uses Django's development server.
 
 ## Validation and tests
 

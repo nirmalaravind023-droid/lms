@@ -19,3 +19,9 @@ Copy `.env.example` to `.env` for local development. Never commit `.env`.
 | `DEFAULT_FROM_EMAIL` | Optional | Default outgoing sender. | `noreply@example.com` |
 
 Production deployments must use a unique secret, `DEBUG=False`, non-default database credentials, and deployment-specific host/origin values.
+
+## Docker Compose database selection
+
+The checked-in `.env.example` keeps `DATABASE_ENGINE=sqlite` because that is the lightest local setup outside Docker. `docker-compose.yml` overrides the database variables for the `web` and `streamlit` services so containers use PostgreSQL through the Compose service name `db` and Redis through the service name `redis`.
+
+For Docker Compose, keep the `POSTGRES_*` values aligned between the `db`, `web`, and `streamlit` services. Override the credentials from your shell or `.env` when needed, but do not change `POSTGRES_HOST=db` inside Compose unless the database runs outside the Compose network.
