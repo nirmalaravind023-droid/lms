@@ -154,6 +154,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. To report
 
 - [Architecture](docs/architecture.md)
 - [Project structure guide](docs/project-structure.md)
+- [Production deployment notes](docs/production-deployment.md)
 - [Current roadmap](docs/roadmap.md)
 - [Known issues](docs/known-issues.md)
 - [Troubleshooting](docs/troubleshooting.md)
