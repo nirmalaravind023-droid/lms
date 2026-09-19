@@ -6,7 +6,7 @@ from apps.accounts.forms import RegistrationForm
 from apps.accounts.models import User, UserLifecycleRequest
 from apps.assessments.models import Quiz, QuizAssignment, QuizAttempt
 from apps.common.context_processors import notification_counts
-from apps.common.models import LearningAuditEvent
+from apps.common.models import AdminAuditLog, LearningAuditEvent
 from apps.courses.models import Course, CourseAssignment, CourseNotification, Enrollment, Lesson, LessonProgress, Module
 from apps.organizations.models import Company, Department
 
@@ -238,6 +238,43 @@ class UserLifecycleFlowTests(TestCase):
 
         people_result = next(item for item in results if item["category"] == "People")
         self.assertEqual(people_result["url"], reverse("user-detail", kwargs={"user_id": self.learner.id}))
+
+
+class AuthenticationAuditTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Audit Co", company_code="AUDIT")
+        self.department = Department.objects.create(company=self.company, name="Security", code="SEC")
+        self.user = User.objects.create_user(
+            username="audit-user",
+            email="audit@example.com",
+            password="StrongPass123!",
+            company=self.company,
+            department=self.department,
+            role=User.Role.LEARNER,
+        )
+
+    def test_login_logout_and_failed_login_create_audit_logs(self):
+        self.client.post(
+            reverse("login"),
+            data={"username": self.user.email, "password": "StrongPass123!"},
+            HTTP_USER_AGENT="Audit test browser",
+            REMOTE_ADDR="192.0.2.10",
+        )
+        self.client.post(reverse("logout"), HTTP_USER_AGENT="Audit test browser", REMOTE_ADDR="192.0.2.10")
+        self.client.post(
+            reverse("login"),
+            data={"username": self.user.email, "password": "wrong-password"},
+            HTTP_USER_AGENT="Audit test browser",
+            REMOTE_ADDR="192.0.2.11",
+        )
+
+        actions = list(AdminAuditLog.objects.order_by("created_at").values_list("action", flat=True))
+        self.assertIn("auth_login", actions)
+        self.assertIn("auth_logout", actions)
+        self.assertIn("auth_login_failed", actions)
+        failed_log = AdminAuditLog.objects.get(action="auth_login_failed")
+        self.assertEqual(failed_log.metadata["username"], self.user.email)
+        self.assertEqual(failed_log.metadata["ip_address"], "192.0.2.11")
 
 
 class RegistrationApprovalFlowTests(TestCase):
