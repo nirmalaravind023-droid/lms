@@ -2,7 +2,7 @@
 
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Django 6.0](https://img.shields.io/badge/Django-6.0-092E20?logo=django&logoColor=white)](https://www.djangoproject.com/)
-[![License not selected](https://img.shields.io/badge/license-not%20selected-lightgrey)](#license)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![CI configured](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 
 Python LMS Foundation is a Django-based learning-management-system foundation for organizations that need courses, assessments, learner progress, certificates, and internal messaging in one application.
@@ -91,6 +91,16 @@ The sample environment uses SQLite. To use PostgreSQL, set `DATABASE_ENGINE` to 
 
 See [environment configuration](docs/environment.md) for every variable and safe development defaults.
 
+### Demo/sample data
+
+A migrated database has no users or courses yet. There is no bundled fixture set; create a working account with the built-in management command instead:
+
+```bash
+python manage.py create_test_admin --email admin@example.com --password Admin@12345
+```
+
+This creates (or updates) a super-admin account you can use to sign in and create organizations, courses, and enrollments through the app itself. `--email`, `--password`, and `--username` are all optional and default to the values shown above.
+
 ## Frontend calendar bundle
 
 The Django calendar page depends on the checked-in bundle at `static/js/react/calendar-board.js`. Rebuild it after changing `frontend/src/calendar-board.jsx`:
@@ -157,4 +167,4 @@ Screenshots and a demo recording are not yet available. Contributions that add a
 
 ## License
 
-A license has not yet been selected. Do not assume permission to reuse or distribute this repository until a license is added.
+MIT — see [LICENSE](LICENSE).
