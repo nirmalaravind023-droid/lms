@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registration Complete</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+  </head>
+  <body class="auth-body">
+    <section class="auth-card wide-auth-card">
+      <h1>Registration Sent For Approval</h1>
+      <p class="muted">This employee account is created in pending mode. HR or a manager must approve it first. After approval, the system generates the employee ID and the person can sign in with username or email plus password.</p>
+      {% if registration %}
+      <div class="card stack">
+        <p><strong>Name:</strong> {{ registration.name }}</p>
+        <p><strong>User ID:</strong> {{ registration.user_id|default:"Pending HR Approval" }}</p>
+        <p class="muted">{{ registration.employee_id_note }}</p>
+        <p><strong>Email Login:</strong> {{ registration.email }}</p>
+        <p><strong>Username:</strong> {{ registration.username }}</p>
+        <p><strong>Role:</strong> {{ registration.role }}</p>
+        <p><strong>Department:</strong> {{ registration.department }}</p>
+        <p><strong>Status:</strong> {{ registration.status }}</p>
+        <p class="muted">{{ registration.login_note }}</p>
+      </div>
+      {% endif %}
+      <div class="action-row">
+        <a class="button button-secondary" href="{% url 'login' %}">Go To Login</a>
+        <a class="button" href="{% url 'register' %}">Register Another Employee</a>
+      </div>
+    </section>
+  </body>
+</html>

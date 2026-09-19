@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile_user.get_full_name|default:profile_user.username }}{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <span class="badge">People Management</span>
+      <h1>{{ profile_user.get_full_name|default:profile_user.username }}</h1>
+      <p class="muted">Username: {{ profile_user.username }} | {{ profile_user.email }}</p>
+    </div>
+    <div class="action-row">
+      <a class="button button-secondary" href="{% url 'user-directory' %}">Back To People</a>
+    </div>
+  </div>
+
+  <section class="quiz-builder-summary-grid">
+    <article class="quiz-builder-summary-card">
+      <span class="badge">Hours</span>
+      <strong>{{ profile_summary.hours_label }}</strong>
+      <p class="muted">Tracked learning time from lesson progress.</p>
+    </article>
+    <article class="quiz-builder-summary-card">
+      <span class="badge">Lessons</span>
+      <strong>{{ profile_summary.completed_lessons }}</strong>
+      <p class="muted">Completed lesson records so HR can see what this person finished.</p>
+    </article>
+    <article class="quiz-builder-summary-card">
+      <span class="badge">Sections</span>
+      <strong>{{ profile_summary.completed_courses }}</strong>
+      <p class="muted">Fully completed sections in the learner journey.</p>
+    </article>
+    <article class="quiz-builder-summary-card">
+      <span class="badge">Quizzes</span>
+      <strong>{{ profile_summary.quiz_attempts }}</strong>
+      <p class="muted">{{ profile_summary.passed_quizzes }} passed | {{ profile_summary.pending_quiz_reviews }} pending review.</p>
+    </article>
+  </section>
+
+  <div class="two-column-layout">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Profile Snapshot</h2>
+        <span class="badge">{{ profile_user.get_role_display }}</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <tbody>
+            <tr><th>Name</th><td>{{ profile_user.get_full_name|default:profile_user.username }}</td></tr>
+            <tr><th>Username</th><td>{{ profile_user.username }}</td></tr>
+            <tr><th>Email</th><td>{{ profile_user.email }}</td></tr>
+            <tr><th>User ID</th><td>{{ profile_user.employee_code|default:"-" }}</td></tr>
+            <tr><th>Department</th><td>{{ profile_user.department|default:"-" }}</td></tr>
+            <tr><th>Company</th><td>{{ profile_user.company|default:"-" }}</td></tr>
+            <tr><th>Phone</th><td>{{ profile_user.phone_number|default:"-" }}</td></tr>
+            <tr><th>Status</th><td>{% if profile_user.is_active %}Active{% else %}Inactive{% endif %}</td></tr>
+            <tr><th>Average Completion</th><td>{{ profile_summary.average_completion }}%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Recent Activity</h2>
+        <span class="badge">{{ recent_activity_feed|length }}</span>
+      </div>
+      <div class="stack">
+        {% for item in recent_activity_feed %}
+        <article class="card compact-card">
+          <strong>{{ item.event_type|title }}</strong>
+          <p class="muted">
+            {% if item.course %}{{ item.course.title }}{% elif item.module %}{{ item.module.title }}{% elif item.lesson %}{{ item.lesson.title }}{% elif item.quiz %}{{ item.quiz.title }}{% else %}Learning activity{% endif %}
+          </p>
+          <small class="muted">{{ item.happened_at }}</small>
+        </article>
+        {% empty %}
+        <p class="muted">No learning audit entries yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="two-column-layout">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Sections And Progress</h2>
+        <span class="badge">{{ recent_enrollments|length }}</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Section</th>
+              <th>Status</th>
+              <th>Completion</th>
+              <th>Due Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for enrollment in recent_enrollments %}
+            <tr>
+              <td>{{ enrollment.course.title }}</td>
+              <td>{{ enrollment.get_status_display }}</td>
+              <td>{{ enrollment.completion_percentage }}%</td>
+              <td>{{ enrollment.due_date|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No section enrollments found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Lesson Time</h2>
+        <span class="badge">{{ profile_summary.hours_label }}</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Lesson</th>
+              <th>Section</th>
+              <th>Status</th>
+              <th>Time Spent</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for progress in recent_lesson_progress %}
+            <tr>
+              <td>{{ progress.lesson.title }}</td>
+              <td>{{ progress.lesson.module.course.title }}</td>
+              <td>{{ progress.get_status_display }}</td>
+              <td>{{ progress.time_spent_seconds|default:0 }} sec</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No lesson progress found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Quiz Attempts</h2>
+      <span class="badge">{{ recent_quiz_attempts|length }}</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Quiz</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th>Submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for attempt in recent_quiz_attempts %}
+          <tr>
+            <td>{{ attempt.quiz.title }}</td>
+            <td>{{ attempt.get_status_display }}</td>
+            <td>{{ attempt.percentage }}%</td>
+            <td>{{ attempt.submitted_at|default:"In progress" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4">No quiz attempts found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+{% endblock %}

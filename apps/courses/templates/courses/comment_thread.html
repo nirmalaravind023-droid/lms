@@ -1,0 +1,24 @@
+<article class="card compact-card{% if depth %} comment-thread-nested{% endif %}" id="comment-{{ comment.id }}">
+  <strong>{{ comment.author.get_full_name|default:comment.author.email }}</strong>
+  <p class="muted">{{ comment.created_at }}</p>
+  <div>{{ comment.formatted_body }}</div>
+  {% if comment.image %}
+  <p><a href="{{ comment.image.url }}" target="_blank" rel="noopener noreferrer">Open attached image</a></p>
+  <img class="comment-image" src="{{ comment.image.url }}" alt="Comment attachment">
+  {% endif %}
+  <form method="post" action="{% url 'course-comment-create' course.slug %}" class="stack" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="parent_id" value="{{ comment.id }}">
+    <textarea name="body" rows="2" placeholder="Reply with **bold**, *italic*, __underline__, or - list"></textarea>
+    <input type="file" name="image" accept="image/*">
+    <button class="button button-secondary" type="submit">Reply</button>
+  </form>
+
+  {% if comment.replies.all %}
+  <div class="comment-replies">
+    {% for reply in comment.replies.all %}
+      {% include "courses/comment_thread.html" with comment=reply course=course depth=depth|add:1 %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</article>

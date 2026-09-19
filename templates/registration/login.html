@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/css/app.css?v=20260403b">
+  </head>
+  <body class="auth-body">
+    <section class="auth-card auth-card-login">
+      <div class="auth-hero-copy">
+        <span class="badge">Secure Access</span>
+        <h1>LMS Portal Login</h1>
+        <p class="muted">Sign in with your email, username, or phone number. New users can register first.</p>
+      </div>
+      {% if form.pending_approval_message %}
+      <section class="auth-pending-panel">
+        <div class="auth-pending-header">
+          <span class="badge">Pending Approval</span>
+          <strong>{{ form.pending_approval_message.title }}</strong>
+        </div>
+        <p>{{ form.pending_approval_message.body }}</p>
+        <div class="auth-pending-grid">
+          <div><span class="muted">Login Email</span><strong>{{ form.pending_approval_message.email }}</strong></div>
+          {% if form.pending_approval_message.company %}<div><span class="muted">Company</span><strong>{{ form.pending_approval_message.company }}</strong></div>{% endif %}
+          {% if form.pending_approval_message.department %}<div><span class="muted">Department</span><strong>{{ form.pending_approval_message.department }}</strong></div>{% endif %}
+        </div>
+        <p class="muted">{{ form.pending_approval_message.note }}</p>
+      </section>
+      {% endif %}
+      <form method="post" class="stack">
+        {% csrf_token %}
+        {% if form.non_field_errors and not form.pending_approval_message %}
+        <div class="flash-stack">
+          {% for error in form.non_field_errors %}
+          <div class="flash">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div>
+          <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+          {{ form.username }}
+          {{ form.username.errors }}
+        </div>
+        <div>
+          <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+          {{ form.password }}
+          {{ form.password.errors }}
+        </div>
+        <button class="button" type="submit">Sign In</button>
+      </form>
+      <p class="muted">Need an account? <a href="{% url 'register' %}">Register here</a></p>
+    </section>
+    <div class="global-error-modal" data-global-error-modal hidden>
+      <div class="global-error-modal-card" role="alertdialog" aria-live="assertive" aria-modal="true">
+        <div class="panel-header">
+          <div>
+            <span class="badge" data-global-error-badge>Error</span>
+            <strong data-global-error-title>What is the error?</strong>
+          </div>
+          <button class="button button-secondary" type="button" data-global-error-close>Close</button>
+        </div>
+        <div class="stack" data-global-error-body></div>
+      </div>
+    </div>
+    <script src="/static/js/shell.js"></script>
+    <script>
+      window.addEventListener("pageshow", function(event) {
+        if (event.persisted) {
+          window.location.reload();
+        }
+      });
+    </script>
+  </body>
+</html>

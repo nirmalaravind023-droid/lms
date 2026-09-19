@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Transfer User{% endblock %}
+
+{% block content %}
+<section class="panel quiz-hero-panel">
+  <div class="panel-header">
+    <div>
+      <h1>Transfer User</h1>
+      <p class="muted">Move this employee to a different department from a separate page, then return to People Management.</p>
+    </div>
+    <div class="action-row">
+      <a class="button button-secondary" href="{% url 'user-directory' %}">Back To People</a>
+    </div>
+  </div>
+
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h2>{{ target_user.get_full_name|default:target_user.username }}</h2>
+        <p class="muted">{{ target_user.email }}</p>
+      </div>
+      <span class="badge">{% if current_department %}Current: {{ current_department.name }}{% else %}No Department{% endif %}</span>
+    </div>
+
+    <form method="post" class="stack" data-loading-form data-loading-label="Transferring user...">
+      {% csrf_token %}
+      <div class="directory-filter-grid">
+        <div>
+          <label for="{{ form.department.id_for_label }}">New Department</label>
+          {{ form.department }}
+          {% if form.department.errors %}
+          <div class="form-error-stack">{{ form.department.errors }}</div>
+          {% endif %}
+        </div>
+        <div>
+          <label for="{{ form.note.id_for_label }}">Note</label>
+          {{ form.note }}
+          {% if form.note.errors %}
+          <div class="form-error-stack">{{ form.note.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="button" type="submit" data-loading-button>Transfer Now</button>
+        <a class="button button-secondary" href="{% url 'user-directory' %}">Cancel</a>
+      </div>
+    </form>
+  </section>
+</section>
+{% endblock %}

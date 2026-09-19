@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Sections{% endblock %}
+
+{% block content %}
+<section class="panel course-library-hero">
+  <div class="panel-header">
+    <div class="course-library-copy">
+      <span class="badge">Learning Library</span>
+      <div>
+      <h1>Sections</h1>
+      <p class="muted">Browse published learning sections, sector-based modules, assignments, and in-progress learning journeys.</p>
+      </div>
+      <div class="course-library-rail">
+        <span class="badge">{{ courses|length }} Visible Items</span>
+        <span class="badge">Video + Article Flow</span>
+        <span class="badge">Sector Aware</span>
+      </div>
+    </div>
+    {% if request.user.is_admin_like or request.user.is_manager_like %}
+    <div class="action-row">
+      <a class="button" href="{% url 'course-create' %}">+ Add Section</a>
+    </div>
+    {% endif %}
+  </div>
+  <div class="course-library-stats">
+    <article class="course-library-stat">
+      <strong>Published learning</strong>
+      <p class="muted">Keep modules, videos, articles, and assessments tied together in one learner flow.</p>
+    </article>
+    <article class="course-library-stat">
+      <strong>Authoring shortcut</strong>
+      <p class="muted">Create the section, choose the sector, then add module content in builder mode.</p>
+    </article>
+  </div>
+ </section>
+
+<section class="panel">
+  {% if request.user.is_admin_like or request.user.is_manager_like %}
+  <section class="card compact-card">
+    <strong>Authoring Flow</strong>
+    <p class="muted">Add Section -> choose sector/department -> save section -> add module -> add lesson -> paste YouTube link or upload a local video file.</p>
+  </section>
+  {% endif %}
+  <div class="card-grid course-library-grid">
+    {% for item in courses %}
+      {% if item.course %}
+        {% with course=item.course enrollment=item %}
+        <article class="card course-library-card">
+          <div class="course-library-card-header">
+            <span class="badge">{{ enrollment.get_status_display }}</span>
+            <span class="muted">{{ course.department|default:"General Team" }}</span>
+          </div>
+          <h2><a href="{% url 'course-detail' course.slug %}">{{ course.title }}</a></h2>
+          <p>{{ course.description|truncatechars:140 }}</p>
+          <div class="course-library-progress">
+            <span style="width: {{ enrollment.completion_percentage }}%;"></span>
+          </div>
+          <div class="course-library-card-footer">
+            <span>{{ enrollment.completion_percentage }}% complete</span>
+            <a class="button button-secondary" href="{% url 'course-detail' course.slug %}">Continue</a>
+          </div>
+        </article>
+        {% endwith %}
+      {% else %}
+        <article class="card course-library-card">
+          <div class="course-library-card-header">
+            <span class="badge">{% if request.user.role == "learner" %}Available{% else %}{{ item.get_status_display }}{% endif %}</span>
+            <span class="muted">{{ item.department|default:"General Team" }}</span>
+          </div>
+          <h2><a href="{% url 'course-detail' item.slug %}">{{ item.title }}</a></h2>
+          <p>{{ item.description|truncatechars:140 }}</p>
+          <div class="course-library-card-footer">
+            <span class="muted">Ready to start</span>
+            <a class="button button-secondary" href="{% url 'course-detail' item.slug %}">Open</a>
+          </div>
+        </article>
+      {% endif %}
+    {% empty %}
+      <p>No sections available yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

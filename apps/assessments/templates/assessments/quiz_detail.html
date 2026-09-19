@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ quiz.title }}{% endblock %}
+
+{% block content %}
+<section class="panel quiz-attempt-shell">
+  <div class="panel-header quiz-detail-header">
+    <div>
+      <h1>{{ quiz.title }}</h1>
+      <p class="muted">
+        {% if can_view_live_insights %}
+        HR/admin review workspace: manage questions here and review learner attempts from one clean page.
+        {% else %}
+        {{ quiz.description }}
+        {% endif %}
+      </p>
+    </div>
+    <div class="action-row">
+      {% if can_view_live_insights %}
+      <a class="button" href="{% url 'quiz-update' quiz.id %}">Edit Quiz</a>
+      <a class="button button-danger" href="{% url 'quiz-delete' quiz.id %}">Delete Quiz</a>
+      {% endif %}
+      <a class="button button-secondary" href="{% url 'quiz-list' %}">Back</a>
+    </div>
+  </div>
+
+  <div class="quiz-status-panel quiz-status-panel-clean">
+    <span class="badge">{{ quiz.get_assessment_type_display }}</span>
+    {% if quiz.course %}<span class="badge">Course: {{ quiz.course.title }}</span>{% endif %}
+    {% if quiz.module %}<span class="badge">Module: {{ quiz.module.title }}</span>{% endif %}
+    <span class="badge">Passing {{ quiz.passing_score }}%</span>
+    <span class="quiz-pass-pill">{{ quiz.questions.count }} Questions</span>
+    {% if quiz.time_limit_minutes %}
+    <span class="quiz-pass-pill">Total {{ quiz.time_limit_minutes }} min</span>
+    {% endif %}
+  </div>
+
+  {% if can_view_live_insights %}
+  <div class="card compact-card quiz-admin-action-note">
+    <div class="quiz-meta-chip-row">
+      <span class="badge">Admin Controls</span>
+      <strong>Manage this quiz from here</strong>
+    </div>
+    <p class="muted">Edit Quiz opens the builder where you can change questions, options, section names, and question order. Delete Quiz removes the full quiz with its assignments and attempts.</p>
+  </div>
+  <div class="quiz-highlight-strip">
+    <article class="quiz-highlight-card">
+      <span class="badge">People Attended</span>
+      <h2>{{ admin_quiz_summary.attendees }}</h2>
+      <p>{% if top_department_attendance %}Top department: {{ top_department_attendance.learner__department__name|default:"No Department" }} ({{ top_department_attendance.total }}){% else %}No learner attendance yet.{% endif %}</p>
+    </article>
+    <article class="quiz-highlight-card quiz-highlight-card-alt">
+      <span class="badge">Evaluation Queue</span>
+      <h2>{{ admin_quiz_summary.pending }} Pending</h2>
+      <p>HR/admin can review descriptive answers here without taking the quiz as a learner.</p>
+    </article>
+    <article class="quiz-highlight-card">
+      <span class="badge">Performance</span>
+      <h2>{{ admin_quiz_summary.avg_score }}%</h2>
+      <p>{{ admin_quiz_summary.passed }} passed, {{ admin_quiz_summary.failed }} failed, {{ admin_quiz_summary.total_attempts }} total attempt{{ admin_quiz_summary.total_attempts|pluralize }}.</p>
+    </article>
+  </div>
+  {% endif %}
+
+  <div class="quiz-attempt-layout">
+    <aside class="card quiz-sidebar">
+      <h2>{% if can_view_live_insights %}Quiz Analysis{% else %}Quiz Progress{% endif %}</h2>
+      <p class="muted">{% if can_view_live_insights %}See who attended, which attempts need evaluation, and how learners are performing across this quiz.{% else %}Continue the quiz from the current question.{% endif %}</p>
+      <div class="quiz-progress-ring" data-quiz-progress-ring>
+        <strong data-quiz-progress-value>0%</strong>
+      </div>
+      <div class="stack">
+        <div class="quiz-meta-chip-row">
+          <span class="badge">{{ attempt_count }} Attempt{{ attempt_count|pluralize }}</span>
+          <span class="badge">Max {{ max_attempts }}</span>
+          {% if active_attempt %}
+          <span class="badge">1 Active</span>
+          {% elif not can_view_live_insights %}
+          <span class="badge">Remaining {{ remaining_attempts }}</span>
+          {% endif %}
+        </div>
+        {% if not can_view_live_insights and detail_state %}
+        <div class="card compact-card quiz-state-panel">
+          <div class="quiz-meta-chip-row">
+            <span class="badge">{{ detail_state.badge }}</span>
+            <span class="quiz-state-pill quiz-state-pill-{{ detail_state.tone }}">{{ detail_state.title }}</span>
+          </div>
+          <p class="muted">{{ detail_state.body }}</p>
+          {% if active_attempt %}
+          <p class="muted">Started {{ active_attempt.started_at|date:"d M Y, H:i" }}</p>
+          {% endif %}
+          {% if latest_attempt and latest_attempt.status != "in_progress" %}
+          <a class="button button-secondary" href="{% url 'quiz-result' latest_attempt.id %}">View Latest Result</a>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if latest_attempt and latest_attempt.status != "in_progress" %}
+        <div class="card compact-card">
+          <strong>Latest Result</strong>
+          <p class="muted">{{ latest_attempt.percentage }}% | {{ latest_attempt.get_status_display }}</p>
+        </div>
+        {% endif %}
+        {% if show_attempt_limit_warning and not can_view_live_insights %}
+        <div class="form-error-stack">
+          <p>You already used the allowed attempts for this quiz.</p>
+        </div>
+        {% endif %}
+      </div>
+      {% if not can_view_live_insights %}
+      <div class="stack quiz-section-jump-stack">
+        {% for section in learner_sections %}
+        <article class="card compact-card quiz-section-nav-card" data-quiz-section-nav data-section-index="{{ section.index }}">
+          <div class="quiz-meta-chip-row">
+            <span class="badge">{{ section.label }}</span>
+            <strong>{{ section.title }}</strong>
+          </div>
+          <div class="stack quiz-question-jump-list">
+            {% for item in section.questions %}
+            <button
+              class="button button-secondary quiz-jump-button"
+              type="button"
+              data-quiz-jump="question-{{ item.question.id }}"
+              data-section-index="{{ section.index }}"
+              data-question-index="{{ item.global_number|add:-1 }}"
+            >
+              {{ item.section_question_number }}
+            </button>
+            {% endfor %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if can_view_live_insights %}
+      <div class="card compact-card quiz-live-panel" id="analytics-overview">
+        <h3>Analytics Overview</h3>
+        {% if admin_quiz_summary.total_attempts %}
+        <div class="stack">
+          <div class="quiz-meta-chip-row">
+            <span class="badge">Attendees</span>
+            <strong>{{ admin_quiz_summary.attendees }}</strong>
+          </div>
+          <div class="quiz-meta-chip-row">
+            <span class="badge">Attempts</span>
+            <strong>{{ admin_quiz_summary.total_attempts }}</strong>
+          </div>
+          <div class="quiz-meta-chip-row">
+            <span class="badge">Avg Score</span>
+            <strong>{{ admin_quiz_summary.avg_score }}%</strong>
+          </div>
+          <div class="quiz-meta-chip-row">
+            <span class="badge">Passed</span>
+            <strong>{{ admin_quiz_summary.passed }}</strong>
+          </div>
+          <div class="quiz-meta-chip-row">
+            <span class="badge">Failed</span>
+            <strong>{{ admin_quiz_summary.failed }}</strong>
+          </div>
+          <div class="quiz-meta-chip-row">
+            <span class="badge">Pending Review</span>
+            <strong>{{ admin_quiz_summary.pending }}</strong>
+          </div>
+        </div>
+        {% else %}
+        <p class="muted">Analytics will appear after the first learner attends this quiz.</p>
+        {% endif %}
+      </div>
+      {% if admin_quiz_summary.total_attempts %}
+      <div class="card compact-card quiz-live-panel" data-quiz-live-panel data-insights-url="{% url 'quiz-live-insights' quiz.id %}">
+        <h3>Real-Time Results</h3>
+        <div class="stack">
+          <div class="quiz-meta-chip-row">
+            <span class="badge">Attempts</span>
+            <strong data-live-total>0</strong>
+          </div>
+          <div class="quiz-meta-chip-row">
+            <span class="badge">Avg Score</span>
+            <strong data-live-avg>0%</strong>
+          </div>
+          <div class="quiz-meta-chip-row">
+            <span class="badge">Passed</span>
+            <strong data-live-pass>0</strong>
+          </div>
+          <div class="quiz-meta-chip-row">
+            <span class="badge">Failed</span>
+            <strong data-live-fail>0</strong>
+          </div>
+        </div>
+        <p class="muted">Auto-refreshes while learners submit.</p>
+        <h4>Quiz Insights</h4>
+        <div class="stack" data-live-insights-list>
+          <p class="muted">No responses yet.</p>
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+      {% if can_view_live_insights %}
+      <div class="card compact-card quiz-live-panel" id="attempt-management">
+        <h3>Attempt Management</h3>
+        <div class="stack">
+          {% for review_attempt in recent_attempts %}
+          <article class="card compact-card">
+            <div class="quiz-meta-chip-row">
+              <strong>{{ review_attempt.learner.get_full_name|default:review_attempt.learner.username }}</strong>
+              <span class="badge">{{ review_attempt.get_status_display }}</span>
+            </div>
+            <p class="muted">{{ review_attempt.learner.email }}{% if review_attempt.learner.department %} | {{ review_attempt.learner.department.name }}{% endif %}</p>
+            <p class="muted">Score {{ review_attempt.score }} | {{ review_attempt.percentage }}% | {{ review_attempt.created_at|date:"d M Y, H:i" }}</p>
+            <a class="button button-secondary" href="{% url 'quiz-attempt-review' review_attempt.id %}">Review Marks</a>
+          </article>
+          {% empty %}
+          <p class="muted">No learner attempts yet for this quiz.</p>
+          {% endfor %}
+        </div>
+      </div>
+      {% if admin_quiz_summary.total_attempts %}
+      <div class="card compact-card quiz-live-panel">
+        <h3>Attendance By Department</h3>
+        <div class="stack">
+          {% for item in attendance_by_department %}
+          <div class="quiz-meta-chip-row">
+            <span class="badge">{{ item.learner__department__name|default:"No Department" }}</span>
+            <strong>{{ item.total }}</strong>
+          </div>
+          {% empty %}
+          <p class="muted">No attendee records yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card compact-card quiz-live-panel">
+        <h3>Weak Questions</h3>
+        <div class="stack">
+          {% for item in weak_questions %}
+          <article class="card compact-card">
+            <strong>{{ item.accuracy }}% accuracy</strong>
+            <p class="muted">{{ item.prompt }}</p>
+            <small class="muted">{% if item.section %}{{ item.section }} | {% endif %}{{ item.total_answers }} answer(s) | Missed by {{ item.missed_count }} learner(s)</small>
+          </article>
+          {% empty %}
+          <p class="muted">No answer analytics yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+    </aside>
+
+    {% if not can_view_live_insights %}
+    <form method="post" class="quiz-form quiz-form-modern" data-quiz-form data-total-minutes="{{ quiz.time_limit_minutes|default:0 }}" data-draft-url="{% url 'quiz-draft-save' quiz.id %}" data-draft-answers='{{ draft_answers_json|escapejs }}'>
+      {% csrf_token %}
+      <div class="card compact-card quiz-console-top">
+        <div class="stack">
+          <span class="badge">Section</span>
+          <strong data-current-section-label>Section 1</strong>
+          <p class="muted" data-section-lock-copy>Finish this section to open the next one.</p>
+        </div>
+        <div class="quiz-meta-chip-row">
+          <span class="badge">Answer Sync</span>
+          <strong class="quiz-autosave-status quiz-autosave-status-idle" data-quiz-autosave-status>Autosave ready</strong>
+        </div>
+      </div>
+
+      {% for section in learner_sections %}
+      <section class="quiz-section-flow" data-section-block data-section-index="{{ section.index }}">
+        <section class="card compact-card quiz-section-card">
+          <span class="badge">{{ section.label }}</span>
+          <h2>{{ section.title }}</h2>
+          <p class="muted">
+            {% if section.question_count == 1 %}
+            This section has 1 question. Complete it to continue.
+            {% else %}
+            This section has {{ section.question_count }} questions. Complete this section to unlock the next one.
+            {% endif %}
+          </p>
+        </section>
+        {% for item in section.questions %}
+        {% include "assessments/includes/quiz_question_card.html" with item=item section=section %}
+        {% endfor %}
+      </section>
+      {% endfor %}
+
+      <div class="quiz-submit-bar">
+        {% if can_start_attempt %}
+        <p class="muted" data-submit-copy>Complete each section in order. The assessment will auto-submit if the exam timer ends.</p>
+        <button class="button" type="submit" data-submit-button>Submit Assessment</button>
+        {% else %}
+        <p class="muted">This quiz is locked because the attempt limit was reached.</p>
+        <a class="button button-secondary" href="{% url 'quiz-list' %}">Back To Assessments</a>
+        {% endif %}
+      </div>
+    </form>
+    {% else %}
+    <section class="quiz-form quiz-form-modern">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Learner</th>
+              <th>Email</th>
+              <th>Department</th>
+              <th>Status</th>
+              <th>Score</th>
+              <th>Submitted</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for review_attempt in header_attempts %}
+            <tr>
+              <td>{{ review_attempt.learner.get_full_name|default:review_attempt.learner.username }}</td>
+              <td>{{ review_attempt.learner.email }}</td>
+              <td>{% if review_attempt.learner.department %}{{ review_attempt.learner.department.name }}{% else %}-{% endif %}</td>
+              <td>{{ review_attempt.get_status_display }}</td>
+              <td>{{ review_attempt.score }} | {{ review_attempt.percentage }}%</td>
+              <td>{{ review_attempt.created_at|date:"d M Y, H:i" }}</td>
+              <td><a class="button button-secondary" href="{% url 'quiz-attempt-review' review_attempt.id %}">Review</a></td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7">No attempts yet. Once learners submit this quiz, review rows will appear here.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</section>
+
+{% if can_start_attempt and not quiz_started %}
+<form method="post" action="{% url 'quiz-start' quiz.id %}" id="quiz-start-form">
+  {% csrf_token %}
+</form>
+  <div class="quiz-builder-modal" data-quiz-instruction-modal>
+  <div class="quiz-builder-modal-card">
+    <span class="badge">Instructions</span>
+    <h2>{{ quiz.get_assessment_type_display }} Instructions</h2>
+    <p class="muted">{{ quiz.instructions|default:"Read the flow below before you start. This quiz moves section by section and keeps syncing your answers while you work." }}</p>
+    <div class="stack">
+      {% for point in quiz_instruction_points %}
+      <p class="muted">{{ forloop.counter }}. {{ point }}</p>
+      {% endfor %}
+    </div>
+    <button class="button" type="button" data-start-quiz>Start Quiz</button>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/quiz_experience.js' %}?v=20260403b"></script>
+{% if can_view_live_insights %}
+<script>
+  (() => {
+    const panel = document.querySelector("[data-quiz-live-panel]");
+    if (!panel) return;
+    const url = panel.dataset.insightsUrl;
+    const total = panel.querySelector("[data-live-total]");
+    const avg = panel.querySelector("[data-live-avg]");
+    const pass = panel.querySelector("[data-live-pass]");
+    const fail = panel.querySelector("[data-live-fail]");
+    const insightsList = panel.querySelector("[data-live-insights-list]");
+
+    const renderInsights = (insights) => {
+      if (!insightsList) return;
+      insightsList.innerHTML = "";
+      if (!insights.length) {
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "No responses yet.";
+        insightsList.appendChild(empty);
+        return;
+      }
+      insights.forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "card compact-card";
+        card.innerHTML = `
+          <strong>${item.type} | ${item.accuracy}%</strong>
+          <p class="muted">${item.question}</p>
+          <small class="muted">${item.total_answers} answer(s)</small>
+        `;
+        insightsList.appendChild(card);
+      });
+    };
+
+    const refresh = async () => {
+      try {
+        const response = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+        if (!response.ok) return;
+        const payload = await response.json();
+        total.textContent = payload.summary.total_attempts;
+        avg.textContent = `${payload.summary.avg_score}%`;
+        pass.textContent = payload.summary.pass_count;
+        fail.textContent = payload.summary.fail_count;
+        renderInsights(payload.question_insights || []);
+      } catch (error) {
+      }
+    };
+
+    refresh();
+    window.setInterval(refresh, 8000);
+  })();
+</script>
+{% endif %}
+{% endblock %}

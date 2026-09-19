@@ -1,0 +1,22 @@
+{% if page_obj and page_obj.paginator.num_pages > 1 %}
+<nav class="pagination-bar" aria-label="{{ page_label|default:'Pagination' }}">
+  <span class="muted pagination-summary">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+  <div class="pagination-links">
+    {% if page_obj.has_previous %}
+    <a class="button button-secondary pagination-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}{{ page_param }}={{ page_obj.previous_page_number }}">Previous</a>
+    {% endif %}
+    {% for number in page_numbers %}
+      {% if number == page_obj.paginator.ELLIPSIS %}
+      <span class="pagination-ellipsis">{{ number }}</span>
+      {% elif number == page_obj.number %}
+      <span class="pagination-link pagination-link-active">{{ number }}</span>
+      {% else %}
+      <a class="button button-secondary pagination-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}{{ page_param }}={{ number }}">{{ number }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <a class="button button-secondary pagination-link" href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}{{ page_param }}={{ page_obj.next_page_number }}">Next</a>
+    {% endif %}
+  </div>
+</nav>
+{% endif %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Review Marks{% endblock %}
+
+{% block content %}
+<section class="panel quiz-result-shell">
+  <div class="panel-header">
+    <div>
+      <span class="badge">HR Review</span>
+      <h1>{{ attempt.quiz.title }}</h1>
+      <p class="muted">{{ review_summary.learner_name }} | {{ review_summary.learner_email }}</p>
+    </div>
+    <div class="action-row">
+      <span class="badge">{{ attempt.get_status_display }}</span>
+      <span class="quiz-pass-pill">Score {{ attempt.score }}</span>
+      <span class="badge">{{ attempt.percentage }}%</span>
+      <a class="button button-secondary" href="{% url 'quiz-detail' attempt.quiz.id %}">Back To Quiz</a>
+    </div>
+  </div>
+
+  <div class="quiz-highlight-strip">
+    <article class="quiz-highlight-card">
+      <span class="badge">Learner</span>
+      <h2>{{ review_summary.learner_name }}</h2>
+      <p>{{ review_summary.department_name }} | {{ review_summary.submitted_at|date:"d M Y, H:i" }}</p>
+    </article>
+    <article class="quiz-highlight-card quiz-highlight-card-alt">
+      <span class="badge">Manual Review</span>
+      <h2>{{ manual_answers|length }} Answer{{ manual_answers|length|pluralize }}</h2>
+      <p>Only essay or descriptive answers need manual marks here. Objective answers are already auto-scored.</p>
+    </article>
+    <article class="quiz-highlight-card">
+      <span class="badge">Attempt Summary</span>
+      <h2>{{ review_summary.question_count }} Questions</h2>
+      <p>{{ review_summary.auto_count }} auto-checked and {{ review_summary.manual_count }} waiting for HR/admin evaluation.</p>
+    </article>
+  </div>
+
+  <form method="post" class="stack">
+    {% csrf_token %}
+    <div class="card-grid quiz-card-grid">
+      {% for answer in attempt.answers.all %}
+      <article class="card quiz-card">
+        <h2>{{ answer.question.prompt|truncatechars:140 }}</h2>
+        <p class="muted">{{ answer.question.get_question_type_display }} | Max {{ answer.question.marks }}{% if answer.question.negative_marks %} | Min -{{ answer.question.negative_marks }}{% endif %}</p>
+        {% if answer.answer_text %}
+        <p>{{ answer.answer_text }}</p>
+        {% elif answer.selected_choice_ids %}
+        <p class="muted">Selected option IDs: {{ answer.selected_choice_ids|join:", " }}</p>
+        {% endif %}
+        {% if answer.requires_manual_review %}
+        <label for="answer_{{ answer.id }}_marks">Awarded Marks</label>
+        <input
+          id="answer_{{ answer.id }}_marks"
+          class="calendar-input"
+          type="number"
+          step="0.25"
+          min="-{{ answer.question.negative_marks|default:0 }}"
+          max="{{ answer.question.marks }}"
+          name="answer_{{ answer.id }}_marks"
+          value="{{ answer.awarded_marks }}"
+        >
+        <span class="badge badge-warning">Manual Review Required</span>
+        {% else %}
+        <p class="muted">Awarded Marks: {{ answer.awarded_marks }}</p>
+        <span class="badge">Auto Checked</span>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+
+    <div class="quiz-submit-bar">
+      <p class="muted">Finalize marks to move this attempt from pending evaluation to graded.</p>
+      <button class="button" type="submit">Finalize Marks</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

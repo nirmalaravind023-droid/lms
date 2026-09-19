@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  font-family: Inter, "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.fc .fc-button {
+  border-radius: 999px;
+  border: 0;
+  background: #0f172a;
+  box-shadow: none;
+}
+
+.fc .fc-button:hover,
+.fc .fc-button:focus {
+  background: #1d4ed8;
+}
+
+.fc .fc-daygrid-event {
+  border-radius: 999px;
+  border: 0;
+  padding: 2px 8px;
+}

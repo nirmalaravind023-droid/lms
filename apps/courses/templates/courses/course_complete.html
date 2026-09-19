@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Course Completed{% endblock %}
+
+{% block content %}
+<section class="panel completion-shell">
+  <div class="completion-burst"></div>
+  <div class="completion-copy">
+    <span class="badge">Course Completed</span>
+    <h1>Congratulations, {{ request.user.first_name|default:request.user.username }}!</h1>
+    <p class="muted">You completed <strong>{{ course.title }}</strong>. Your learner progress has been updated.</p>
+    {% if enrollment %}
+    <p class="muted">Completion recorded at {{ enrollment.completed_at|date:"M d, Y H:i" }}.</p>
+    {% endif %}
+  </div>
+
+  {% if certificate %}
+  <section class="card completion-next-card completion-finished-card">
+    <div class="panel-header">
+      <div>
+        <h2>Certificate Ready</h2>
+        <p class="muted">Your course completion certificate has been connected and saved in the certificate hub.</p>
+      </div>
+      <span class="badge">{{ certificate.certificate_number }}</span>
+    </div>
+    <div class="action-row">
+      <a class="button" href="{% url 'certificate-list' %}">Open Certificates</a>
+      {% if next_quiz %}
+      <a class="button button-secondary" href="{% url 'quiz-detail' next_quiz.id %}">Open Connected Quiz</a>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if next_quiz %}
+  <section class="card completion-next-card">
+    <div class="panel-header">
+      <div>
+        <h2>Quiz Ready For This Course</h2>
+        <p class="muted">This course already has an assigned quiz, so the learner can attend it immediately.</p>
+      </div>
+      <span class="badge">Attend Quiz</span>
+    </div>
+    <h3>{{ next_quiz.title }}</h3>
+    <p class="muted">{{ next_quiz.description|default:"Open the connected quiz and finish the assessment flow for this course." }}</p>
+    <div class="action-row">
+      <a class="button" href="{% url 'quiz-detail' next_quiz.id %}">Start Quiz</a>
+      <a class="button button-secondary" href="{% url 'course-list' %}">Back To Course Library</a>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if next_item %}
+  <section class="card completion-next-card">
+    <div class="panel-header">
+      <div>
+        <h2>Next Course Ready</h2>
+        <p class="muted">HR/admin has more learning available for you, so you can continue right away.</p>
+      </div>
+      <span class="badge">Up Next</span>
+    </div>
+    {% if next_item.course %}
+    <h3>{{ next_item.course.title }}</h3>
+    <p class="muted">{{ next_item.course.description|default:"Continue with your next assigned course." }}</p>
+    <div class="action-row">
+      <a class="button" href="{% url 'course-detail' next_item.course.slug %}">Open Next Course</a>
+      <a class="button button-secondary" href="{% url 'course-list' %}">Back To Course Library</a>
+    </div>
+    {% else %}
+    <h3>{{ next_item.title }}</h3>
+    <p class="muted">{{ next_item.description|default:"A new published course is available for your sector." }}</p>
+    <div class="action-row">
+      <a class="button" href="{% url 'course-detail' next_item.slug %}">Open Next Course</a>
+      <a class="button button-secondary" href="{% url 'course-list' %}">Back To Course Library</a>
+    </div>
+    {% endif %}
+  </section>
+  {% else %}
+  <section class="card completion-next-card completion-finished-card">
+    <div class="panel-header">
+      <div>
+        <h2>All Current Courses Complete</h2>
+        <p class="muted">There is no next course assigned right now.</p>
+      </div>
+      <span class="badge">Great Work</span>
+    </div>
+    <p class="muted">
+      When HR/admin assigns a new course to your sector or directly to you, it will automatically appear in your learner portal and course list.
+    </p>
+    <div class="action-row">
+      <a class="button" href="{% url 'course-list' %}">View My Courses</a>
+      <a class="button button-secondary" href="{% url 'dashboard-home' %}">Go To Dashboard</a>
+    </div>
+  </section>
+  {% endif %}
+</section>
+{% endblock %}

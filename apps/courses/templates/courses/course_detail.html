@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }}{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h1>{{ course.title }}</h1>
+      <p class="muted">{{ course.description }}</p>
+    </div>
+    {% if request.user.role == "learner" and first_lesson %}
+      {% if learner_enrollment and learner_enrollment.status == "completed" %}
+      <a class="button" href="{% url 'course-complete' course.slug %}">Completed</a>
+      {% else %}
+      <a class="button" href="{% url 'lesson-detail' first_lesson.id %}"{% if first_lesson.opens_in_new_tab %} target="_blank" rel="noopener noreferrer"{% endif %}>{% if learner_enrollment %}Continue Section{% else %}Start Section{% endif %}</a>
+      {% endif %}
+    {% elif request.user.is_admin_like or request.user.is_manager_like %}
+      <a class="button" href="{% url 'course-builder' course.slug %}">Open Builder</a>
+    {% endif %}
+  </div>
+
+  {% for module in course.modules.all %}
+  <article class="module-card">
+    <h2>{{ module.order }}. {{ module.title }}</h2>
+    <p>{{ module.description }}</p>
+    <ul class="lesson-list">
+      {% for lesson in module.lessons.all %}
+      <li>
+        <strong>{{ lesson.order }}. {{ lesson.title }}</strong>
+        <span class="badge">{{ lesson.get_lesson_type_display }}</span>
+        <p>{{ lesson.summary }}</p>
+        <div class="action-row">
+          <a class="button button-secondary" href="{% url 'lesson-detail' lesson.id %}"{% if lesson.opens_in_new_tab and request.user.role == "learner" %} target="_blank" rel="noopener noreferrer"{% endif %}>{% if lesson.lesson_type == "pdf" %}Open PDF{% elif lesson.lesson_type == "link" %}Open Material{% else %}Open Lesson{% endif %}</a>
+        </div>
+        {% if lesson.youtube_embed_url %}
+        <div class="media-frame">
+          <iframe
+            src="{{ lesson.youtube_embed_url }}"
+            title="{{ lesson.title }}"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+          ></iframe>
+        </div>
+        <p><a class="button button-secondary" href="{{ lesson.external_url }}" target="_blank" rel="noopener noreferrer">Watch Video On YouTube</a></p>
+        {% elif lesson.media_file %}
+        {% if lesson.lesson_type == "pdf" %}
+        <p><a class="button button-secondary" href="{{ lesson.pdf_resource_url }}" target="_blank" rel="noopener noreferrer">Open PDF In New Tab</a></p>
+        {% else %}
+        <div class="media-frame">
+          <video controls preload="metadata">
+            <source src="{{ lesson.media_file.url }}">
+            Your browser does not support video playback.
+          </video>
+        </div>
+        {% endif %}
+        {% endif %}
+        {% if lesson.content or lesson.article_image %}
+        <div class="card compact-card lesson-inline-article">
+          {% if lesson.article_image %}
+          <div class="lesson-article-hero lesson-article-hero-inline">
+            <img src="{{ lesson.article_image.url }}" alt="{{ lesson.title }}">
+          </div>
+          {% endif %}
+          {% if lesson.content %}
+          {{ lesson.formatted_content }}
+          {% endif %}
+        </div>
+        {% endif %}
+      </li>
+      {% empty %}
+      <li>No lessons in this module yet.</li>
+      {% endfor %}
+      {% for quiz in module.quizzes.all %}
+      {% if request.user.role != "learner" or quiz.status == "published" %}
+      <li>
+        <strong>Quiz. {{ quiz.title }}</strong>
+        <span class="badge">{{ quiz.get_assessment_type_display }}</span>
+        <p>{{ quiz.description|default:"Module quiz connected to this learning flow." }}</p>
+        <div class="action-row">
+          <a class="button button-secondary" href="{% url 'quiz-detail' quiz.id %}">Start Quiz</a>
+        </div>
+      </li>
+      {% endif %}
+      {% endfor %}
+    </ul>
+  </article>
+  {% empty %}
+  <p>No modules created for this section.</p>
+  {% endfor %}
+
+  {% if course_level_quizzes %}
+  <article class="module-card">
+    <h2>Section Quizzes</h2>
+    <ul class="lesson-list">
+      {% for quiz in course_level_quizzes %}
+      <li>
+        <strong>{{ quiz.title }}</strong>
+        <span class="badge">{{ quiz.get_assessment_type_display }}</span>
+        <p>{{ quiz.description|default:"Section-level quiz connected to this section." }}</p>
+        <div class="action-row">
+          <a class="button button-secondary" href="{% url 'quiz-detail' quiz.id %}">Start Quiz</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </article>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>Comments</h2>
+      <p class="muted">Mention HR or another user with @username. Mentioned users will see a notification.</p>
+    </div>
+  </div>
+  <form method="post" action="{% url 'course-comment-create' course.slug %}" class="stack" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ comment_form.as_p }}
+    <button class="button" type="submit">Post Comment</button>
+  </form>
+
+  <div class="stack">
+    {% for comment in comments %}
+    {% include "courses/comment_thread.html" with comment=comment course=course depth=0 %}
+    {% empty %}
+    <p class="muted">No comments yet. Start the discussion here.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

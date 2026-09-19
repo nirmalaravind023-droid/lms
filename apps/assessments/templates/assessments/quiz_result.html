@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Result{% endblock %}
+
+{% block content %}
+<section class="panel quiz-result-shell">
+  <div class="quiz-result-overlay {% if attempt.is_passed %}quiz-result-overlay-pass{% elif attempt.is_passed == False %}quiz-result-overlay-fail{% endif %}" data-quiz-result-overlay>
+    <div class="quiz-result-popup">
+      {% if attempt.is_passed %}
+      <span class="badge">Congratulations</span>
+      <h2>Great job. You passed this quiz.</h2>
+      <p class="muted">Your score is strong and your result is already saved to the learner dashboard and analytics.</p>
+      {% elif attempt.is_passed == False %}
+      <span class="badge">Keep Going</span>
+      <h2>This attempt did not reach the passing score.</h2>
+      <p class="muted">Review the feedback below, revisit the section, and try again if another attempt is allowed.</p>
+      {% if allow_continue_on_fail %}
+      <a class="button" href="{{ continue_target_url }}">Continue To Next Learning Step</a>
+      {% endif %}
+      {% else %}
+      <span class="badge">Under Review</span>
+      <h2>Your quiz is waiting for evaluation.</h2>
+      <p class="muted">Some answers require manual review. Check back soon for the final result.</p>
+      {% endif %}
+      <button class="button button-secondary" type="button" data-close-result-popup>Continue</button>
+    </div>
+  </div>
+
+  <div class="panel-header">
+    <div>
+      <h1>{{ attempt.quiz.title }} Result</h1>
+      <p class="muted">Status: {{ attempt.get_status_display }}</p>
+    </div>
+    <div class="meta-row quiz-result-summary">
+      <span class="badge">{{ attempt.percentage }}%</span>
+      <span class="quiz-pass-pill">Score {{ attempt.score }}</span>
+    </div>
+  </div>
+
+  <div class="quiz-highlight-strip">
+    <article class="quiz-highlight-card">
+      <span class="badge">Performance</span>
+      <h2>{{ attempt.percentage }}%</h2>
+      <p>Your score has been saved to the learner dashboard and analytics view.</p>
+    </article>
+    <article class="quiz-highlight-card quiz-highlight-card-alt">
+      <span class="badge">Status</span>
+      <h2>{{ attempt.get_status_display }}</h2>
+      <p>Review the answers below to understand what was auto-scored and what needs manual review.</p>
+    </article>
+    {% if attempt.is_passed %}
+    <article class="quiz-highlight-card quiz-highlight-card-badge quiz-highlight-card-badge-{{ quiz_badge.tier_key }}">
+      <span class="badge">{{ quiz_badge.tier_label }}</span>
+      <h2>{{ quiz_badge.marks_label }}</h2>
+      <p><strong>Quiz Badge Earned.</strong> {{ quiz_badge.title }} earned with {{ quiz_badge.percentage_label }}.</p>
+      <div class="action-row">
+        <a class="button button-secondary" href="{% url 'certificate-list' %}">Open Certificates & Badges</a>
+        {% if related_certificate %}
+        <span class="badge">Certificate Ready</span>
+        {% endif %}
+      </div>
+    </article>
+    {% elif attempt.is_passed == False and allow_continue_on_fail %}
+    <article class="quiz-highlight-card">
+      <span class="badge">Admin Override</span>
+      <h2>Continue Allowed</h2>
+      <p>This quiz is configured to let the learner move forward even if this attempt failed.</p>
+      <a class="button button-secondary" href="{{ continue_target_url }}">Open Linked Section</a>
+    </article>
+    {% endif %}
+  </div>
+  {% if related_certificate %}
+  <section class="card compact-card quiz-certificate-link-card">
+    <div class="panel-header">
+      <div>
+        <strong>Connected Certificate</strong>
+        <p class="muted">This quiz is linked to a section that already has a certificate record.</p>
+      </div>
+      <span class="badge">{{ related_certificate.certificate_number }}</span>
+    </div>
+    <div class="action-row">
+      <a class="button button-secondary" href="{% url 'certificate-list' %}">Open Certificate Hub</a>
+      {% if linked_course %}
+      <a class="button button-secondary" href="{% url 'course-detail' linked_course.slug %}">Open Linked Section</a>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="stack">
+    {% for row in answer_review_rows %}
+    <article class="card quiz-card">
+      <div class="quiz-meta-chip-row">
+        <span class="badge">Question {{ row.question_number }}</span>
+        <span class="badge">{{ row.question_type }}</span>
+        {% if row.section_title %}<span class="badge">{{ row.section_title }}</span>{% endif %}
+      </div>
+      <h2>{{ row.prompt }}</h2>
+      <p><strong>Your Answer:</strong> {{ row.learner_response }}</p>
+      {% if row.correct_response %}
+      <p><strong>Correct Answer:</strong> {{ row.correct_response }}</p>
+      {% endif %}
+      {% if row.explanation %}
+      <p class="muted"><strong>Explanation:</strong> {{ row.explanation }}</p>
+      {% endif %}
+      <p class="muted">Awarded Marks: {{ row.awarded_marks }}</p>
+      {% if row.requires_manual_review %}
+      <span class="badge badge-warning">Manual Review Required</span>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (() => {
+    const overlay = document.querySelector("[data-quiz-result-overlay]");
+    const closeButton = document.querySelector("[data-close-result-popup]");
+    if (!overlay || !closeButton) return;
+    closeButton.addEventListener("click", () => {
+      overlay.classList.add("quiz-result-overlay-hidden");
+    });
+  })();
+</script>
+{% endblock %}

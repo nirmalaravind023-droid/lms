@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Messages{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h1>Messages</h1>
+      <p class="muted">Inbox-style conversations on the left and a searchable people list on the right.</p>
+    </div>
+    <a class="button" href="{% url 'conversation-create' %}">+</a>
+  </div>
+  <form method="get" class="inline-form search-form">
+    <input type="text" name="q" value="{{ search_query }}" placeholder="Search people or conversations">
+    <button class="button button-secondary" type="submit">Search</button>
+  </form>
+  {% if departments %}
+  <div class="calendar-filter-rail calendar-filter-rail-modern">
+    <a class="button button-secondary{% if not selected_department %} calendar-filter-active{% endif %}" href="{% url 'conversation-list' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}">All Teams</a>
+    {% for department in departments %}
+    <a class="button button-secondary{% if selected_department == department.id|stringformat:'s' %} calendar-filter-active{% endif %}" href="{% url 'conversation-list' %}?department={{ department.id }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" style="border-color: {{ department.color }}; color: {{ department.color }};">
+      {{ department.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="message-home-layout">
+    <section class="panel message-inbox-panel">
+      <div class="panel-header">
+        <h2>Inbox</h2>
+        <span class="badge">{{ conversations_page.paginator.count }}</span>
+      </div>
+      <div class="message-thread-list">
+      {% for conversation in conversations %}
+      <a href="{% url 'conversation-detail' conversation.id %}" class="thread-card">
+        <div class="panel-header">
+          <strong>{{ conversation.title|default:"Direct Conversation" }}</strong>
+          {% if conversation.has_unread %}
+          <span class="badge">New</span>
+          {% endif %}
+        </div>
+        <p class="muted">{{ conversation.messages.count }} messages</p>
+      </a>
+      {% empty %}
+      <p class="muted">No conversations found.</p>
+      {% endfor %}
+      </div>
+      {% include "includes/pagination.html" with page_obj=conversations_page page_numbers=conversations_page_numbers pagination_query=conversations_pagination_query page_param=conversations_page_param page_label="Inbox pagination" %}
+    </section>
+
+    <section class="panel contact-panel message-contact-panel">
+      <div class="panel-header">
+        <h2>Contacts</h2>
+        <a class="button button-secondary" href="{% url 'conversation-create' %}">New Message</a>
+      </div>
+      <div class="message-thread-list">
+        {% for contact in contacts %}
+        <article class="contact-card">
+          <div>
+            <strong>{{ contact.get_full_name|default:contact.email }}</strong>
+            <p class="muted">{{ contact.department|default:"No Department" }}</p>
+          </div>
+          <div class="action-row">
+            <a class="button button-secondary" href="{% url 'conversation-create' %}?recipient={{ contact.id }}">Chat</a>
+            <a class="button button-secondary" href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+          </div>
+        </article>
+        {% empty %}
+        <p class="muted">No contacts match your search.</p>
+        {% endfor %}
+      </div>
+      {% include "includes/pagination.html" with page_obj=contacts_page page_numbers=contacts_page_numbers pagination_query=contacts_pagination_query page_param=contacts_page_param page_label="Contacts pagination" %}
+    </section>
+  </div>
+</section>
+{% endblock %}

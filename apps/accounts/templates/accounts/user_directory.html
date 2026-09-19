@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}People Management{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h1>People Management</h1>
+      <p class="muted">{% if is_self_directory %}Your account details and current learning identity.{% else %}Search by name, username, email, or user ID to open one person and review their learning activity.{% endif %}</p>
+    </div>
+  </div>
+  {% if is_self_directory and profile_user %}
+  <section class="panel">
+    <div class="panel-header">
+      <h2>My Details</h2>
+      <span class="badge">{{ profile_user.get_role_display }}</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <tbody>
+          <tr>
+            <th>Name</th>
+            <td>{{ profile_user.get_full_name|default:profile_user.username }}</td>
+          </tr>
+          <tr>
+            <th>Email</th>
+            <td>{{ profile_user.email }}</td>
+          </tr>
+          <tr>
+            <th>User ID</th>
+            <td>{{ profile_user.employee_code|default:"-" }}</td>
+          </tr>
+          <tr>
+            <th>Department</th>
+            <td>{{ profile_user.department|default:"-" }}</td>
+          </tr>
+          <tr>
+            <th>Company</th>
+            <td>{{ profile_user.company|default:"-" }}</td>
+          </tr>
+          <tr>
+            <th>Status</th>
+            <td>{% if profile_user.is_active %}Active{% else %}Inactive{% endif %}</td>
+          </tr>
+          <tr>
+            <th>Phone</th>
+            <td>{{ profile_user.phone_number|default:"-" }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% else %}
+  <form method="get" class="directory-filter-form">
+    <div class="directory-filter-grid">
+      <div class="field-span-2">
+        <label for="directory-search">Search</label>
+        <input id="directory-search" class="calendar-input" type="search" name="q" value="{{ search_query }}" placeholder="Search by name, email, phone, username, or user ID">
+      </div>
+      <div>
+        <label for="directory-role">Role</label>
+        <select id="directory-role" class="calendar-input calendar-select" name="role">
+          <option value="">All Roles</option>
+          {% for value, label in role_options %}
+          <option value="{{ value }}" {% if selected_role == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="directory-department">Department</label>
+        <select id="directory-department" class="calendar-input calendar-select" name="department">
+          <option value="">All Departments</option>
+          {% for department in departments %}
+          <option value="{{ department.id }}" {% if selected_department == department.id|stringformat:'s' %}selected{% endif %}>{{ department.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="directory-filter-actions">
+      <button class="button" type="submit">Apply Filters</button>
+      <a class="button button-secondary" href="{% url 'user-directory' %}">Reset</a>
+    </div>
+  </form>
+
+  {% if departments %}
+  <div class="calendar-filter-rail calendar-filter-rail-modern directory-chip-rail">
+    <a class="button button-secondary {% if not selected_department %}calendar-filter-active{% endif %}" href="{% url 'user-directory' %}{% if search_query or selected_role %}?{% endif %}{% if search_query %}q={{ search_query|urlencode }}{% endif %}{% if search_query and selected_role %}&{% endif %}{% if selected_role %}role={{ selected_role }}{% endif %}">All Departments</a>
+    {% for department in departments %}
+    <a
+      class="button button-secondary {% if selected_department == department.id|stringformat:'s' %}calendar-filter-active{% endif %}"
+      href="{% url 'user-directory' %}?department={{ department.id }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if selected_role %}&role={{ selected_role }}{% endif %}"
+      style="border-color: {{ department.color }};"
+    >
+      {{ department.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if can_manage_users %}
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Pending User Requests</h2>
+      <span class="badge">{{ pending_lifecycle_requests|length }}</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Request</th>
+            <th>Status</th>
+            <th>Requested By</th>
+            <th>Transfer To</th>
+            <th>Note</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for request_item in pending_lifecycle_requests %}
+          <tr>
+            <td>{{ request_item.target_user.email }}</td>
+            <td>{{ request_item.get_action_display }}</td>
+            <td>{% if request_item.target_user.is_active %}Active{% else %}Pending Approval{% endif %}</td>
+            <td>{{ request_item.requested_by|default:"System / HR" }}</td>
+            <td>{{ request_item.requested_department|default:"-" }}</td>
+            <td>{{ request_item.note|default:"-" }}</td>
+            <td>
+              <div class="action-row">
+                <form method="post" action="{% url 'user-lifecycle-request-decision' request_item.id %}">
+                  {% csrf_token %}
+                  {% if request_item.action == "registration_approval" %}
+                  <select name="requested_department">
+                    {% for department in company_departments %}
+                    <option value="{{ department.id }}"{% if request_item.requested_department_id == department.id or request_item.target_user.department_id == department.id %} selected{% endif %}>
+                      {{ department.name }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                  {% endif %}
+                  <input type="hidden" name="decision" value="approve">
+                  <button class="button button-secondary" type="submit">Approve</button>
+                </form>
+                <form method="post" action="{% url 'user-lifecycle-request-decision' request_item.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="decision" value="reject">
+                  <button class="button button-danger" type="submit">Reject</button>
+                </form>
+                {% if request_item.action == "registration_approval" %}
+                <a class="button button-secondary" href="{% url 'user-transfer' request_item.target_user.id %}">Edit Dept</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7">No pending lifecycle requests.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+  <div class="two-column-layout">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Learners</h2>
+        <span class="badge">{{ learners_page.paginator.count }}</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>User ID</th>
+              <th>Department</th>
+              <th>Status</th>
+              <th>Profile</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for person in learners %}
+            <tr>
+              <td>{{ person.get_full_name|default:person.username }}</td>
+              <td>{{ person.email }}</td>
+              <td>{{ person.employee_code|default:"-" }}</td>
+              <td>{{ person.department|default:"-" }}</td>
+              <td>{% if person.is_active %}Active{% else %}Inactive{% endif %}</td>
+              <td><a class="button button-secondary" href="{% url 'user-detail' person.id %}">Open</a></td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6">No learners found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "includes/pagination.html" with page_obj=learners_page page_numbers=learners_page_numbers pagination_query=learners_pagination_query page_param=learners_page_param page_label="Learners pagination" %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>All Users</h2>
+        <span class="badge">{{ users_page.paginator.count }}</span>
+      </div>
+      {% if can_manage_users %}
+      <p class="muted">Deactivate keeps the user record but blocks login. Transfer opens a separate page to move the user to another department and clear old department learning items. Soft delete resets the user account, removes department/company links, and archives login identifiers.</p>
+      {% endif %}
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Company</th>
+              <th>Department</th>
+              <th>Status</th>
+              <th>Profile</th>
+              {% if can_manage_users %}<th>Actions</th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for person in users %}
+            <tr>
+              <td>{{ person.get_full_name|default:person.username }}</td>
+              <td>{{ person.email }}</td>
+              <td>{{ person.get_role_display }}</td>
+              <td>{{ person.company|default:"-" }}</td>
+              <td>{{ person.department|default:"-" }}</td>
+              <td>{% if person.is_active %}Active{% else %}Inactive{% endif %}</td>
+              <td><a class="button button-secondary" href="{% url 'user-detail' person.id %}">Open</a></td>
+              {% if can_manage_users %}
+              <td>
+                <div class="stack">
+                  {% if person.id != request.user.id %}
+                  <div class="action-row">
+                    <a class="button button-secondary" href="{% url 'user-transfer' person.id %}">Transfer</a>
+                    {% if person.is_active %}
+                    <form method="post" action="{% url 'user-lifecycle-action' person.id %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="deactivate">
+                      <button class="button button-secondary" type="submit">Deactivate</button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="{% url 'user-lifecycle-action' person.id %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="reactivate">
+                      <button class="button button-secondary" type="submit">Reactivate</button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{% url 'user-lifecycle-action' person.id %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="soft_delete">
+                      <button class="button button-danger" type="submit">Soft Delete</button>
+                    </form>
+                  </div>
+                  {% else %}
+                  <span class="muted">You cannot change your own admin record here.</span>
+                  {% endif %}
+                </div>
+              </td>
+              {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="{% if can_manage_users %}8{% else %}7{% endif %}">No users found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "includes/pagination.html" with page_obj=users_page page_numbers=users_page_numbers pagination_query=users_pagination_query page_param=users_page_param page_label="Users pagination" %}
+    </section>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Module Form{% endblock %}
+
+{% block content %}
+<section class="authoring-shell">
+  <section class="panel authoring-hero authoring-hero-studio">
+    <div class="authoring-hero-copy">
+      <span class="badge">Module Builder</span>
+      <div>
+        <h1>{% if object %}Edit Module{% else %}Create Module{% endif %}</h1>
+        <p class="muted">Build the learning flow for <strong>{{ course.title }}</strong> one module at a time, then fill it with video and article lessons.</p>
+      </div>
+      <div class="action-row">
+        <a class="button button-secondary" href="{% url 'course-builder' course.slug %}">Back To Section Builder</a>
+      </div>
+    </div>
+    <div class="authoring-hero-meta">
+      <article class="authoring-stat-card">
+        <span class="badge">Step 2</span>
+        <strong>Module Structure</strong>
+        <p class="muted">Group lessons by chapter, topic, or learning milestone.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="authoring-grid authoring-grid-wide">
+    <section class="panel authoring-form-card">
+      <form method="post" class="authoring-form-layout">
+        {% csrf_token %}
+        <section class="authoring-section-header">
+          <div>
+            <h2>Module Details</h2>
+            <p class="muted">A module is one chapter in the section, like onboarding, safety, policy, or concept learning.</p>
+          </div>
+        </section>
+        <div class="authoring-form-grid">
+          <div class="authoring-field authoring-field-full">
+            <label for="{{ form.title.id_for_label }}">Module Title</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+          </div>
+          <div class="authoring-field authoring-field-full">
+            <label for="{{ form.description.id_for_label }}">Module Description</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+          </div>
+          <div class="authoring-field">
+            <label for="{{ form.is_mandatory.id_for_label }}">Mandatory Module</label>
+            {{ form.is_mandatory }}
+            {{ form.is_mandatory.errors }}
+          </div>
+        </div>
+        <div class="action-row authoring-submit-row">
+          <button class="button" type="submit">{% if object %}Save Module{% else %}Create Module{% endif %}</button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="panel authoring-guide-card">
+      <h2>Module Tips</h2>
+      <div class="authoring-guide-list">
+        <article class="authoring-guide-step">
+          <strong>Keep one topic per module</strong>
+          <span class="muted">This makes learner progress and analytics easier to follow.</span>
+        </article>
+        <article class="authoring-guide-step">
+          <strong>Add media next</strong>
+          <span class="muted">After saving, add video or article lessons inside this module.</span>
+        </article>
+      </div>
+      <section class="authoring-side-callout">
+        <span class="badge">Structure Tip</span>
+        <strong>Good modules feel like milestones.</strong>
+        <p class="muted">A clean module title makes analytics, learner dashboards, and certificates easier to understand later.</p>
+      </section>
+    </aside>
+  </section>
+</section>
+{% endblock %}

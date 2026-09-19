@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Calendar Task Form{% endblock %}
+
+{% block content %}
+<section class="panel calendar-task-editor">
+  <div class="panel-header calendar-task-editor-header">
+    <div>
+      <span class="badge">Calendar Task</span>
+      <h1>{% if object %}Edit Calendar Task{% else %}Create Calendar Task{% endif %}</h1>
+      <p class="muted">Plan a quiz, assignment, module milestone, or meeting straight from the calendar.</p>
+    </div>
+    {% if return_to %}
+    <a class="button button-secondary" href="{{ return_to }}">Back</a>
+    {% else %}
+    <a class="button button-secondary" href="{% url 'calendar-manage-list' %}">Back</a>
+    {% endif %}
+  </div>
+
+  <form method="post" class="stack calendar-task-editor-form">
+    {% csrf_token %}
+    {% if return_to %}
+    <input type="hidden" name="next" value="{{ return_to }}">
+    {% endif %}
+
+    <div class="calendar-task-editor-layout">
+      <div class="calendar-task-main">
+        <div class="calendar-task-grid">
+          <div class="field-span-2">
+            <label for="{{ form.title.id_for_label }}">Title</label>
+            {{ form.title }}
+          </div>
+          <div>
+            <label for="{{ form.event_type.id_for_label }}">Type</label>
+            {{ form.event_type }}
+          </div>
+          <div>
+            <label for="{{ form.department.id_for_label }}">Department</label>
+            {{ form.department }}
+          </div>
+          <div class="field-span-2" data-meeting-fields hidden>
+            <div class="calendar-task-grid">
+              <div>
+                <label for="{{ form.meeting_type.id_for_label }}">Meeting Type</label>
+                {{ form.meeting_type }}
+              </div>
+              <div>
+                <label for="{{ form.meeting_url.id_for_label }}">Meeting Link</label>
+                {{ form.meeting_url }}
+              </div>
+            </div>
+            <p class="muted">Use this for Google Meet, Zoom, Teams, or another call/video meeting link.</p>
+          </div>
+          <div class="field-span-2">
+            <label for="{{ form.course.id_for_label }}">Related Section</label>
+            {{ form.course }}
+          </div>
+          <div>
+            <label for="{{ form.start_at.id_for_label }}">Start</label>
+            <div data-holiday-widget>
+              {{ form.start_at }}
+              <label class="holiday-help-toggle">
+                <input type="checkbox" data-holiday-toggle>
+                <span>Show India holidays for this date</span>
+              </label>
+              <div class="holiday-help" data-holiday-help hidden>
+                <strong data-holiday-note>Selected date is not one of the built-in India national holidays.</strong>
+                <ul data-holiday-list></ul>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label for="{{ form.end_at.id_for_label }}">End</label>
+            {{ form.end_at }}
+          </div>
+          <div class="field-color field-span-2">
+            <label for="{{ form.color.id_for_label }}">Color</label>
+            <div class="calendar-color-row">
+              {{ form.color }}
+              <span class="muted">Department color auto-syncs here when you pick a sector.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="calendar-task-preview">
+        <span class="badge">Quick Preview</span>
+        <h2>{% if object %}Update this task{% else %}Ready to schedule{% endif %}</h2>
+        <p class="muted">This task will appear on the calendar board as a colored pill, and users can open a quick task overview directly from the date cell.</p>
+        <div class="calendar-preview-stack">
+          <div class="calendar-preview-card">
+            <strong>Type</strong>
+            <span>Quiz, assignment, module milestone, or meeting</span>
+          </div>
+          <div class="calendar-preview-card">
+            <strong>Audience</strong>
+            <span>Department-targeted tasks stay aligned with the selected sector color.</span>
+          </div>
+          <div class="calendar-preview-card">
+            <strong>Flow</strong>
+            <span>Create here, then return straight back to the calendar board.</span>
+          </div>
+          <div class="calendar-preview-card">
+            <strong>Connected Workflows</strong>
+            <div class="action-row">
+              <a class="button button-secondary" href="{{ quiz_create_url }}" data-calendar-quiz-link data-assessment-type="quiz">Create Quiz</a>
+              <a class="button button-secondary" href="{{ quiz_create_url }}" data-calendar-quiz-link data-assessment-type="test">Create Test</a>
+              <a class="button button-secondary" href="#" data-calendar-module-link>New Module</a>
+            </div>
+            <span>Create the real assessment/module from here with the same department and section context.</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    {% if form.errors %}
+    <div class="form-error-stack">
+      {{ form.non_field_errors }}
+      {% for field in form %}
+        {{ field.errors }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="calendar-task-actions">
+      <button class="button" type="submit">{% if object %}Save Task{% else %}Create Task{% endif %}</button>
+      <a class="button button-secondary" href="{% url 'calendar-manage-list' %}">Open Full Task List</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+{{ india_holiday_map_json|json_script:"india-holiday-map" }}
+{{ calendar_task_course_options|json_script:"calendar-task-course-options" }}
+<script src="{% static 'js/date_holidays.js' %}?v=20260402b"></script>
+<script>
+  (() => {
+    const departmentSelect = document.getElementById("id_department");
+    const courseSelect = document.getElementById("id_course");
+    const eventTypeSelect = document.getElementById("id_event_type");
+    const meetingFields = document.querySelector("[data-meeting-fields]");
+    const courseDataNode = document.getElementById("calendar-task-course-options");
+    if (!departmentSelect || !courseSelect || !courseDataNode) {
+      return;
+    }
+
+    const courseItems = JSON.parse(courseDataNode.textContent || "[]");
+    const quizLinks = [...document.querySelectorAll("[data-calendar-quiz-link]")];
+    const moduleLink = document.querySelector("[data-calendar-module-link]");
+    const originalValue = courseSelect.value;
+
+    const buildOptions = (departmentId, preserveValue = true) => {
+      const previousValue = preserveValue ? courseSelect.value : "";
+      const filteredCourses = courseItems.filter((course) => course.department_id && course.department_id === departmentId);
+      courseSelect.innerHTML = "";
+
+      const emptyOption = document.createElement("option");
+      emptyOption.value = "";
+      emptyOption.textContent = departmentId ? "Select department section" : "---------";
+      courseSelect.appendChild(emptyOption);
+
+      filteredCourses.forEach((course) => {
+        const option = document.createElement("option");
+        option.value = course.id;
+        option.textContent = course.title;
+        courseSelect.appendChild(option);
+      });
+
+      const nextValue = filteredCourses.some((course) => course.id === previousValue) ? previousValue : "";
+      courseSelect.value = nextValue;
+    };
+
+    buildOptions(departmentSelect.value, true);
+    if (originalValue && courseSelect.querySelector(`option[value="${originalValue}"]`)) {
+      courseSelect.value = originalValue;
+    }
+
+    departmentSelect.addEventListener("change", () => {
+      buildOptions(departmentSelect.value, false);
+      syncConnectedLinks();
+    });
+
+    courseSelect.addEventListener("change", syncConnectedLinks);
+
+    const syncMeetingFields = () => {
+      if (!meetingFields || !eventTypeSelect) {
+        return;
+      }
+      meetingFields.hidden = eventTypeSelect.value !== "meeting";
+    };
+
+    const syncConnectedLinks = () => {
+      const departmentId = departmentSelect.value;
+      const courseId = courseSelect.value;
+      const title = document.getElementById("id_title")?.value || "";
+      quizLinks.forEach((link) => {
+        const params = new URLSearchParams();
+        if (departmentId) params.set("department", departmentId);
+        if (courseId) params.set("course", courseId);
+        if (title) params.set("title", title);
+        params.set("assessment_type", link.dataset.assessmentType);
+        link.href = `${link.getAttribute("href").split("?")[0]}?${params.toString()}`;
+      });
+      if (moduleLink) {
+        const selectedCourse = courseItems.find((course) => course.id === courseId);
+        moduleLink.href = selectedCourse?.slug ? `/courses/manage/${selectedCourse.slug}/modules/new/` : "#";
+        moduleLink.classList.toggle("button-disabled", !selectedCourse?.slug);
+        moduleLink.setAttribute("aria-disabled", selectedCourse?.slug ? "false" : "true");
+      }
+    };
+
+    eventTypeSelect?.addEventListener("change", syncMeetingFields);
+    document.getElementById("id_title")?.addEventListener("input", syncConnectedLinks);
+    syncMeetingFields();
+    syncConnectedLinks();
+  })();
+</script>
+{% endblock %}

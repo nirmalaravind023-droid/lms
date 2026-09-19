@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Section Form{% endblock %}
+
+{% block content %}
+<section class="authoring-shell">
+  <section class="panel authoring-hero authoring-hero-studio">
+    <div class="authoring-hero-copy">
+      <span class="badge">HR Authoring</span>
+      <div>
+        <h1>{% if object %}Edit Section{% else %}Create Section{% endif %}</h1>
+        <p class="muted">Start with the department, then create the section shell learners will see. After save, the builder becomes your module and lesson workspace.</p>
+      </div>
+      <div class="action-row">
+        <a class="button button-secondary" href="{% url 'course-manage-list' %}">Back To Section Management</a>
+      </div>
+    </div>
+    <div class="authoring-hero-meta">
+      <article class="authoring-stat-card">
+        <span class="badge">Step 1</span>
+        <strong>Section Shell</strong>
+        <p class="muted">Create the section title, sector, and availability settings before modules and lessons.</p>
+      </article>
+      <article class="authoring-stat-card">
+        <span class="badge">After Save</span>
+        <strong>Continue To Builder</strong>
+        <p class="muted">Once this is saved, HR can add modules, video lessons, article lessons, and quizzes.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="authoring-grid authoring-grid-wide">
+    <section class="panel authoring-form-card">
+      <form method="post" class="authoring-form-layout">
+        {% csrf_token %}
+        <section class="authoring-section-header">
+          <div>
+            <h2>Section Identity</h2>
+            <p class="muted">This is the top-level section information HR uses before modules and lessons are added.</p>
+          </div>
+        </section>
+        <div class="authoring-form-grid">
+          <div class="authoring-field">
+            <label for="{{ form.title.id_for_label }}">Section Name</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+          </div>
+          <div class="authoring-field">
+            <label for="{{ form.department.id_for_label }}">Sector / Department</label>
+            {{ form.department }}
+            {{ form.department.errors }}
+          </div>
+          <div class="authoring-field authoring-field-full">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+          </div>
+        </div>
+        <section class="authoring-section-header">
+          <div>
+            <h2>Publishing Rules</h2>
+            <p class="muted">Control whether the section is visible, mandatory, and certificate-based from the beginning.</p>
+          </div>
+        </section>
+        <div class="authoring-form-grid">
+          <div class="authoring-field">
+            <label for="{{ form.status.id_for_label }}">Status</label>
+            {{ form.status }}
+            {{ form.status.errors }}
+          </div>
+          <div class="authoring-field">
+            <label for="{{ form.mandatory.id_for_label }}">Mandatory</label>
+            {{ form.mandatory }}
+            {{ form.mandatory.errors }}
+          </div>
+          <div class="authoring-field">
+            <label for="{{ form.certificate_enabled.id_for_label }}">Certificate Enabled</label>
+            {{ form.certificate_enabled }}
+            {{ form.certificate_enabled.errors }}
+          </div>
+        </div>
+        <div class="action-row authoring-submit-row">
+          <button class="button" type="submit">{% if object %}Save Changes{% else %}Create Section{% endif %}</button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="panel authoring-guide-card">
+      <h2>Recommended Flow</h2>
+      <div class="authoring-guide-list">
+        <article class="authoring-guide-step">
+          <strong>1. Create the section</strong>
+          <span class="muted">Set the department so the right learners see it automatically.</span>
+        </article>
+        <article class="authoring-guide-step">
+          <strong>2. Add modules</strong>
+          <span class="muted">Organize the section into modules like onboarding, concept learning, and assessments.</span>
+        </article>
+        <article class="authoring-guide-step">
+          <strong>3. Add lessons</strong>
+          <span class="muted">Mix videos, article pages, PDF readings, and links inside each module.</span>
+        </article>
+      </div>
+      <section class="authoring-side-callout">
+        <span class="badge">After Save</span>
+        <strong>You will go straight into the section builder.</strong>
+        <p class="muted">That is where modules can be rearranged and lessons can be designed in a more visual way.</p>
+      </section>
+    </aside>
+  </section>
+</section>
+{% endblock %}

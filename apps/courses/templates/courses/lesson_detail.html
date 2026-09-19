@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ lesson.title }}{% endblock %}
+
+{% block content %}
+<section class="lesson-view-shell">
+  <section class="panel lesson-hero-panel">
+    <div class="lesson-hero-copy">
+      <div class="action-row">
+        <span class="badge">{{ lesson.get_lesson_type_display }}</span>
+        {% if module.is_mandatory %}<span class="badge">Mandatory Module</span>{% endif %}
+      </div>
+      <h1>{{ lesson.title }}</h1>
+      <p class="muted">{{ course.title }} / {{ module.title }}</p>
+      {% if lesson.summary %}
+      <p class="lesson-hero-summary">{{ lesson.summary }}</p>
+      {% endif %}
+    </div>
+    <aside class="card compact-card lesson-hero-meta">
+      <div class="lesson-meta-item">
+        <span class="muted">Current module</span>
+        <strong>{{ module.title }}</strong>
+      </div>
+      {% if enrollment %}
+      <div class="lesson-meta-item">
+        <span class="muted">Section progress</span>
+        <strong>{{ enrollment.completion_percentage }}%</strong>
+      </div>
+      {% endif %}
+      <div class="action-row">
+        <a class="button button-secondary" href="{% url 'course-detail' course.slug %}">Back To Section</a>
+        {% if previous_lesson %}
+        <a class="button button-secondary" href="{% url 'lesson-detail' previous_lesson.id %}">Previous</a>
+        {% endif %}
+        {% if next_quiz %}
+        <a class="button button-secondary" href="{% url 'quiz-detail' next_quiz.id %}">{{ next_label }}</a>
+        {% elif next_lesson and request.user.role != "learner" %}
+        <a class="button button-secondary" href="{% url 'lesson-detail' next_lesson.id %}">{{ next_label }}</a>
+        {% elif next_lesson and request.user.role == "learner" %}
+        <a
+          class="button button-secondary{% if not can_advance %} button-disabled{% endif %}"
+          data-next-link
+          href="{% url 'lesson-detail' next_lesson.id %}"
+          aria-disabled="{% if can_advance %}false{% else %}true{% endif %}"
+        >
+          {{ next_label }}
+        </a>
+        {% endif %}
+      </div>
+      {% if request.user.role == "learner" %}
+      <div class="attention-summary-card">
+        <span class="badge">Attention Tracking</span>
+        <small class="muted">Tab switches: {{ progress.tab_switch_count|default:0 }}</small>
+        <small class="muted">Window exits: {{ progress.window_blur_count|default:0 }}</small>
+        <small class="muted">Fullscreen: {{ progress.fullscreen_entry_count|default:0 }}</small>
+      </div>
+      {% endif %}
+    </aside>
+  </section>
+
+  <section class="lesson-layout-grid">
+    <div class="lesson-main-column">
+      {% with video_lesson=primary_video_lesson|default:lesson %}
+      {% if video_lesson and video_lesson.youtube_embed_url %}
+      <section class="card lesson-media-card">
+        <div class="lesson-section-header">
+          <div>
+            <h2>Main Video</h2>
+            <p class="muted">{{ video_lesson.title }}</p>
+          </div>
+        </div>
+        <div class="media-frame media-frame-large">
+          <iframe
+            src="{{ video_lesson.youtube_embed_url }}"
+            title="{{ video_lesson.title }}"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+          ></iframe>
+        </div>
+        <div class="lesson-toolbar">
+          <a class="button button-secondary" href="{{ video_lesson.external_url }}" target="_blank" rel="noopener noreferrer">Watch Video On YouTube</a>
+        </div>
+      </section>
+      {% elif video_lesson and video_lesson.media_file %}
+      <section class="card lesson-media-card">
+        <div class="lesson-section-header">
+          <div>
+            <h2>Main Video</h2>
+            <p class="muted">{{ video_lesson.title }}</p>
+          </div>
+        </div>
+        {% if video_lesson.subtitle_file %}
+        <div class="lesson-subtitle-card">
+          <div>
+            <span class="badge">Embedded Subtitle</span>
+            <strong>Subtitle track is attached to this learner video player.</strong>
+            <p class="muted">Use the player captions control to turn it on while watching.</p>
+          </div>
+          <a class="button button-secondary" href="{{ video_lesson.subtitle_file.url }}" target="_blank" rel="noopener noreferrer">Open Subtitle File</a>
+        </div>
+        {% endif %}
+        <div class="media-frame media-frame-locked media-frame-large">
+          <video
+            preload="metadata"
+            playsinline
+            disablepictureinpicture
+            controls
+            controlslist="nodownload noplaybackrate noremoteplayback"
+            {% if video_lesson.id == lesson.id %}data-lesson-player{% endif %}
+            {% if video_lesson.id == lesson.id %}data-playback-url="{% url 'lesson-playback-event' lesson.id %}"{% endif %}
+            {% if video_lesson.id == lesson.id %}data-next-unlocked="{% if can_advance %}true{% else %}false{% endif %}"{% endif %}
+          >
+            <source src="{{ video_lesson.media_file.url }}">
+            {% if video_lesson.subtitle_file %}
+            <track
+              kind="subtitles"
+              label="English"
+              srclang="en"
+              src="{{ video_lesson.subtitle_file.url }}"
+              default
+            >
+            {% endif %}
+            Your browser does not support video playback.
+          </video>
+          {% if video_lesson.id == lesson.id %}
+          <div class="lesson-toolbar lesson-toolbar-video">
+            <div class="video-guard-controls">
+              <button class="button button-secondary" type="button" data-video-action="toggle">Play</button>
+              <button class="button button-secondary" type="button" data-video-action="rewind">Rewind 10s</button>
+              <button class="button button-secondary" type="button" data-video-action="mute">Mute</button>
+              <button class="button button-secondary" type="button" data-video-action="fullscreen">Fullscreen</button>
+            </div>
+            <div class="lesson-video-stats">
+              <span class="badge"><span data-video-current-time>00:00</span> / <span data-video-duration>00:00</span></span>
+              <span class="badge">Watched {{ video_coverage_percent|default:0 }}%</span>
+            </div>
+          </div>
+          <div class="video-guard-progress">
+            <div class="video-guard-progress-bar">
+              <span data-video-progress-fill style="width:{{ video_coverage_percent|default:0 }}%;"></span>
+            </div>
+            <p class="muted" data-video-status>
+              Pause and rewind are allowed. Skipping ahead will not unlock the next lesson.
+            </p>
+          </div>
+          {% else %}
+          <p class="muted">Open the video lesson directly to track completion and unlock the next step.</p>
+          <div class="action-row">
+            <a class="button button-secondary" href="{% url 'lesson-detail' video_lesson.id %}">Open Main Video Lesson</a>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+      {% endwith %}
+
+      {% if lesson.lesson_type == "pdf" and lesson.pdf_resource_url %}
+      <section class="card lesson-media-card lesson-section-card">
+        <div class="lesson-section-header">
+          <div>
+            <h2>PDF Material</h2>
+            <p class="muted">Open this PDF in a separate tab so the learner can read the full document comfortably.</p>
+          </div>
+        </div>
+        <div class="action-row">
+          <a class="button" href="{{ lesson.pdf_resource_url }}" target="_blank" rel="noopener noreferrer">Open PDF In New Tab</a>
+        </div>
+      </section>
+      {% elif lesson.lesson_type == "link" and lesson.external_url %}
+      <section class="card lesson-media-card lesson-section-card">
+        <div class="lesson-section-header">
+          <div>
+            <h2>Recommended Material</h2>
+            <p class="muted">Use this for books, reference links, articles, or other external study material.</p>
+          </div>
+        </div>
+        <div class="action-row">
+          <a class="button" href="{{ lesson.external_url }}" target="_blank" rel="noopener noreferrer">Open Material In New Tab</a>
+        </div>
+      </section>
+      {% endif %}
+
+      {% if lesson.transcript or lesson.subtitle_file %}
+      <section class="card transcript-panel lesson-section-card">
+        <div class="lesson-section-header">
+          <div>
+            <h2>Transcript</h2>
+            <p class="muted">Live transcript panel shown below the video while it plays.</p>
+          </div>
+        </div>
+        <div class="transcript-body" data-live-transcript>
+          {% if lesson.subtitle_file %}
+          <p class="muted" data-transcript-placeholder>Transcript will follow the subtitle track while the video plays.</p>
+          {% elif lesson.transcript %}
+          {{ lesson.transcript|linebreaks }}
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if request.user.role == "learner" %}
+      <section class="attention-warning" data-attention-warning {% if not attention_warning %}hidden{% endif %}>
+        {{ attention_warning|default:"Attention warning: tab switching, leaving the lesson window, or reading too fast is being tracked for this lesson." }}
+      </section>
+      {% endif %}
+
+      {% if lesson.content or lesson.article_image %}
+      <section class="card lesson-article-card lesson-section-card" {% if article_reading_required_seconds %}data-reading-lesson{% endif %}>
+        {% if lesson.article_image %}
+        <div class="lesson-article-hero">
+          <img src="{{ lesson.article_image.url }}" alt="{{ lesson.title }}">
+        </div>
+        {% endif %}
+        <div class="lesson-article-header">
+          <span class="badge">{{ lesson.get_lesson_type_display }}</span>
+          <h2>{{ lesson.title }}</h2>
+          {% if lesson.summary %}
+          <p class="muted">{{ lesson.summary }}</p>
+          {% endif %}
+        </div>
+        {% if article_reading_required_seconds and request.user.role == "learner" %}
+        <p class="muted">
+          Read this lesson for at least
+          <strong>{{ article_reading_required_seconds }} seconds</strong>
+          before marking it complete.
+        </p>
+        <div class="reading-progress-note" data-reading-timer data-reading-remaining="{{ article_reading_remaining_seconds }}">
+          {% if article_can_complete %}
+          Article reading requirement completed. You can continue.
+          {% else %}
+          Keep this page open for <strong>{{ article_reading_remaining_seconds }}</strong> more seconds to unlock completion.
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if lesson.content %}
+        <div class="lesson-article-body">
+          {{ lesson.formatted_content }}
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="lesson-side-column">
+      <section class="card compact-card lesson-side-card">
+        <h2>Lesson Flow</h2>
+        <div class="lesson-side-stack">
+          {% if previous_lesson %}
+          <a class="lesson-flow-link" href="{% url 'lesson-detail' previous_lesson.id %}">
+            <span class="badge">{{ previous_lesson.get_lesson_type_display }}</span>
+            <span class="muted">Previous</span>
+            <strong>{{ previous_lesson.title }}</strong>
+          </a>
+          {% endif %}
+          <div class="lesson-flow-link lesson-flow-link-current">
+            <span class="badge">{{ lesson.get_lesson_type_display }}</span>
+            <span class="muted">Current</span>
+            <strong>{{ lesson.title }}</strong>
+          </div>
+          {% if next_lesson %}
+          <article class="lesson-flow-link lesson-flow-link-next">
+            <span class="badge">{{ next_lesson.get_lesson_type_display }}</span>
+            <span class="muted">{{ next_label }}</span>
+            <strong>{{ next_lesson.title }}</strong>
+            {% if next_lesson.summary %}
+            <small class="muted">{{ next_lesson.summary }}</small>
+            {% endif %}
+            <div class="action-row">
+            {% if request.user.role != "learner" or can_advance %}
+              <a class="button button-secondary{% if request.user.role == 'learner' and not can_advance %} button-disabled{% endif %}" data-next-link href="{% url 'lesson-detail' next_lesson.id %}" aria-disabled="{% if request.user.role == 'learner' and not can_advance %}true{% else %}false{% endif %}">Open {{ next_lesson.get_lesson_type_display }}</a>
+            {% else %}
+              <a class="button button-secondary button-disabled" data-next-link href="{% url 'lesson-detail' next_lesson.id %}" aria-disabled="true">Locked Until Complete</a>
+            {% endif %}
+            </div>
+          </article>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if supporting_lessons %}
+      <section class="card compact-card lesson-side-card">
+        <h2>Module Articles And Resources</h2>
+        <div class="stack">
+          {% for supporting_lesson in supporting_lessons %}
+          <article class="lesson-chip lesson-chip-resource">
+            <div class="panel-header">
+              <div>
+                <strong>{{ supporting_lesson.order }}. {{ supporting_lesson.title }}</strong>
+                <p class="muted">{{ supporting_lesson.get_lesson_type_display }}{% if supporting_lesson.summary %} | {{ supporting_lesson.summary }}{% endif %}</p>
+              </div>
+              <a class="button button-secondary" href="{% url 'lesson-detail' supporting_lesson.id %}"{% if supporting_lesson.opens_in_new_tab and request.user.role == "learner" %} target="_blank" rel="noopener noreferrer"{% endif %}>{% if supporting_lesson.lesson_type == "pdf" %}Open PDF{% elif supporting_lesson.lesson_type == "link" %}Open Material{% else %}Open{% endif %}</a>
+            </div>
+            {% if supporting_lesson.id == lesson.id and lesson.content or supporting_lesson.id == lesson.id and lesson.article_image %}
+            <div class="card compact-card lesson-inline-article">
+              {% if lesson.article_image %}
+              <div class="lesson-article-hero lesson-article-hero-inline">
+                <img src="{{ lesson.article_image.url }}" alt="{{ lesson.title }}">
+              </div>
+              {% endif %}
+              {% if lesson.content %}
+              {{ lesson.formatted_content }}
+              {% endif %}
+            </div>
+            {% elif supporting_lesson.external_url and supporting_lesson.lesson_type == "link" %}
+            <a href="{{ supporting_lesson.external_url }}" target="_blank" rel="noopener noreferrer">{{ supporting_lesson.external_url }}</a>
+            {% elif supporting_lesson.pdf_resource_url %}
+            <a href="{{ supporting_lesson.pdf_resource_url }}" target="_blank" rel="noopener noreferrer">Open PDF resource</a>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if module_quizzes %}
+      <section class="card compact-card lesson-side-card">
+        <h2>Module Quiz</h2>
+        <div class="stack">
+          {% for quiz in module_quizzes %}
+          <article class="lesson-chip lesson-chip-resource">
+            <div class="panel-header">
+              <div>
+                <strong>{{ quiz.title }}</strong>
+                <p class="muted">{{ quiz.get_assessment_type_display }}{% if quiz.description %} | {{ quiz.description }}{% endif %}</p>
+              </div>
+              <a class="button button-secondary" href="{% url 'quiz-detail' quiz.id %}">Start Quiz</a>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </aside>
+  </section>
+
+  {% if request.user.role == "learner" %}
+  <form method="post" class="panel lesson-complete-bar">
+    {% csrf_token %}
+    <div>
+      <strong>Ready to move on?</strong>
+      <p class="muted">Complete this lesson first, then the next step will unlock automatically.</p>
+    </div>
+    <div class="action-row">
+      <button
+        class="button"
+        data-complete-button
+        type="submit"
+        {% if article_reading_required_seconds and not article_can_complete %}disabled data-reading-complete-button{% endif %}
+      >
+        {% if progress and progress.status == "completed" %}Completed{% else %}Mark Complete & Continue{% endif %}
+      </button>
+      {% if next_quiz %}
+      <a class="button button-secondary{% if not can_advance %} button-disabled{% endif %}" data-next-link href="{% url 'quiz-detail' next_quiz.id %}" aria-disabled="{% if can_advance %}false{% else %}true{% endif %}">{{ next_label }}</a>
+      {% elif next_lesson %}
+      <a class="button button-secondary{% if not can_advance %} button-disabled{% endif %}" data-next-link href="{% url 'lesson-detail' next_lesson.id %}" aria-disabled="{% if can_advance %}false{% else %}true{% endif %}">{{ next_label }}</a>
+      {% endif %}
+    </div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+{% if request.user.role == "learner" %}
+<script>
+  window.lessonPlayerConfig = {
+    csrfToken: "{{ csrf_token|default:'' }}",
+    lessonId: "{{ lesson.id }}",
+    enableTracking: {% if request.user.role == "learner" %}true{% else %}false{% endif %},
+    attentionUrl: "{% url 'lesson-attention-event' lesson.id %}"
+  };
+</script>
+{% endif %}
+{% if lesson.media_file and primary_video_lesson.id == lesson.id %}
+<script src="{% static 'js/lesson_player.js' %}"></script>
+{% endif %}
+{% if article_reading_required_seconds and request.user.role == "learner" %}
+<script src="{% static 'js/lesson_reading.js' %}"></script>
+{% endif %}
+{% endblock %}

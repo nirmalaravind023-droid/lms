@@ -1,0 +1,621 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<section class="dashboard-showcase">
+  <article class="dashboard-showcase-main">
+    <div class="dashboard-showcase-heading">
+      <span class="badge">Learning Command Center</span>
+      {% if request.user.role != "learner" %}
+      <a class="dashboard-inline-link" href="{% url 'analytics-dashboard' %}">Analytics View</a>
+      {% endif %}
+    </div>
+    <div class="dashboard-showcase-copy">
+      <div>
+        <h1>{% if request.user.role == "learner" %}My Learning Dashboard{% else %}LMS Portal{% endif %}</h1>
+        <p>{% if request.user.role == "learner" %}See your course movement, reading speed, quiz progress, and attention tracking in one clean view.{% else %}Track completions, pending work, assessments, messages, and department performance from one polished workspace.{% endif %}</p>
+      </div>
+      <div class="action-row">
+        <a class="button" href="{% url 'calendar-board' %}">Open Calendar</a>
+        <a class="button button-secondary" href="{% url 'course-list' %}">Open Sections</a>
+        {% if request.user.role == "learner" %}
+        <a class="button button-secondary" href="{% url 'conversation-list' %}">Open Messages</a>
+        {% else %}
+        <a class="button button-secondary" href="{% url 'quiz-list' %}">Open Assessments</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="dashboard-showcase-strip">
+      <article class="dashboard-pill-card">
+        <span>In Progress</span>
+        <strong>{{ metrics.in_progress_enrollments }}</strong>
+      </article>
+      <article class="dashboard-pill-card">
+        <span>Completed</span>
+        <strong>{{ metrics.completed_enrollments }}</strong>
+      </article>
+      <article class="dashboard-pill-card dashboard-pill-card-active">
+        <span>Attention</span>
+        <strong>{% if request.user.role == "learner" %}{{ learner_attention_event_total }}{% else %}{{ metrics.attention_flags }}{% endif %}</strong>
+      </article>
+      <article class="dashboard-pill-card">
+        <span>Pending Review</span>
+        <strong>{{ metrics.not_evaluated }}</strong>
+      </article>
+    </div>
+  </article>
+
+  <aside class="dashboard-showcase-side">
+    <article class="dashboard-side-card">
+      <span class="badge">Workspace Pulse</span>
+      <strong>Stay on top of learning, performance, and follow-ups.</strong>
+      <p class="muted">Your LMS shell now keeps the analytics, people-heavy lists, and planning flow cleaner in both light and dark mode.</p>
+      {% if request.user.role != "learner" %}
+      <div class="action-row">
+        <a class="button button-secondary" href="{% url 'user-directory' %}">Open Directory</a>
+        <a class="button button-secondary" href="{% url 'calendar-board' %}">Open Calendar</a>
+      </div>
+      {% endif %}
+    </article>
+    <div class="dashboard-side-stack">
+      <article class="dashboard-mini-stat">
+        <span class="badge">{% if request.user.role == "learner" %}Reading Speed{% else %}Active{% endif %}</span>
+        <strong>{% if request.user.role == "learner" %}{{ learner_speed_gauge_value }}/100{% else %}{{ metrics.in_progress_enrollments }}{% endif %}</strong>
+        <p class="muted">{% if request.user.role == "learner" %}{% if learner_latest_speed %}Latest tracked reading speed: {{ learner_latest_speed|floatformat:1 }} WPM{% else %}No tracked reading speed yet.{% endif %}{% else %}Learners moving through assigned section work.{% endif %}</p>
+      </article>
+      <article class="dashboard-mini-stat">
+        <span class="badge">{% if request.user.role == "learner" %}Attention Events{% else %}Ready{% endif %}</span>
+        <strong>{% if request.user.role == "learner" %}{{ learner_attention_event_total }}{% else %}{{ metrics.not_started }}{% endif %}</strong>
+        <p class="muted">{% if request.user.role == "learner" %}Counts tab switches, window exits, and fast-reading alerts.{% else %}Assigned learning sections still not started.{% endif %}</p>
+      </article>
+    </div>
+  </aside>
+</section>
+
+<section class="dashboard-grid-4 dashboard-grid-tight">
+  <article class="card dashboard-stat-card">
+    <h2>{% if request.user.role == "learner" %}My Sections In Progress{% else %}Total Learners in Progress{% endif %}</h2>
+    <p class="metric">{{ metrics.in_progress_enrollments }}</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>{% if request.user.role == "learner" %}My Completed Sections{% else %}Completed Sections{% endif %}</h2>
+    <p class="metric">{{ metrics.completed_enrollments }}</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>{% if request.user.role == "learner" %}My Not Started Sections{% else %}Not Started{% endif %}</h2>
+    <p class="metric">{{ metrics.not_started }}</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>{% if request.user.role == "learner" %}My Pending Evaluation{% else %}Pending Evaluation{% endif %}</h2>
+    <p class="metric">{{ metrics.not_evaluated }}</p>
+  </article>
+</section>
+
+{% if request.user.role == "learner" %}
+<section class="dashboard-grid-board">
+  <section class="panel dashboard-board-panel dashboard-gauge-panel">
+    <div class="panel-header">
+      <div>
+        <h2>Reading Speed Metric</h2>
+        <p class="muted">A quick learner-side speed gauge from your latest tracked article reading session.</p>
+      </div>
+      <span class="badge">{% if learner_latest_speed %}{{ learner_latest_speed|floatformat:1 }} WPM{% else %}No Data{% endif %}</span>
+    </div>
+    <div class="dashboard-speed-gauge-shell">
+      <div class="dashboard-speed-gauge" style="--gauge-value: {{ learner_speed_gauge_value }};">
+        <div class="dashboard-speed-gauge-core">
+          <strong>{{ learner_speed_gauge_value }}</strong>
+          <span>/100</span>
+        </div>
+      </div>
+      <div class="dashboard-speed-copy">
+        <strong>{% if learner_latest_speed_lesson %}{{ learner_latest_speed_lesson.lesson.title }}{% else %}Reading speed is not connected yet{% endif %}</strong>
+        <p class="muted">{% if learner_latest_speed_lesson %}Latest tracked lesson: {{ learner_latest_speed_lesson.lesson.module.title }}{% else %}Open an article lesson and read normally to start collecting speed tracking data.{% endif %}</p>
+      </div>
+    </div>
+  </section>
+</section>
+
+{% if next_learning_item %}
+<section class="panel dashboard-board-panel">
+  <div class="panel-header">
+    <div>
+      <h2>Continue Learning</h2>
+      <p class="muted">Your next recommended section is ready in the learner portal.</p>
+    </div>
+    <span class="badge">Next</span>
+  </div>
+  <article class="dashboard-activity-card">
+    {% if next_learning_item.course %}
+    <strong>{{ next_learning_item.course.title }}</strong>
+    <span class="muted">{{ next_learning_item.course.description|default:"Continue your assigned learning flow." }}</span>
+    <div class="action-row">
+      <a class="button" href="{% url 'course-detail' next_learning_item.course.slug %}">Open Section</a>
+    </div>
+    {% else %}
+    <strong>{{ next_learning_item.title }}</strong>
+      <span class="muted">{{ next_learning_item.description|default:"A published section is available for your sector." }}</span>
+    <div class="action-row">
+      <a class="button" href="{% url 'course-detail' next_learning_item.slug %}">Open Section</a>
+    </div>
+    {% endif %}
+  </article>
+</section>
+{% endif %}
+
+<section class="dashboard-grid-4 dashboard-grid-tight">
+  <article class="card dashboard-stat-card">
+    <h2>Average Quiz Score</h2>
+    <p class="metric">{% if learner_total_quizzes %}{{ learner_average_score|floatformat:1 }}%{% else %}-{% endif %}</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>Passed Quizzes</h2>
+    <p class="metric">{{ learner_passed_quizzes }}/{{ learner_total_quizzes }}</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>My Attention Events</h2>
+    <p class="metric">{{ learner_attention_event_total }}</p>
+  </article>
+</section>
+
+<section class="dashboard-grid-board">
+  <section class="panel dashboard-board-panel">
+    <div class="panel-header">
+      <h2>Completed Sections</h2>
+      <span class="badge">{{ completed_courses|length }}</span>
+    </div>
+    <div class="stack">
+      {% for enrollment in completed_courses %}
+      <article class="dashboard-activity-card">
+        <strong>{{ enrollment.course.title }}</strong>
+        <span class="muted">Completed</span>
+      </article>
+      {% empty %}
+      <p class="muted">No completed sections yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel dashboard-board-panel">
+    <div class="panel-header">
+      <h2>Non-Completed Sections</h2>
+      <span class="badge">{{ pending_courses|length }}</span>
+    </div>
+    <div class="stack">
+      {% for enrollment in pending_courses %}
+      <article class="dashboard-activity-card">
+        <strong>{{ enrollment.course.title }}</strong>
+        <span class="muted">{{ enrollment.get_status_display }}</span>
+      </article>
+      {% empty %}
+      <p class="muted">Everything is complete.</p>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+
+<section class="panel dashboard-board-panel">
+  <div class="panel-header">
+    <h2>Latest Quiz Results</h2>
+    <span class="badge">{{ latest_quiz_attempts|length }}</span>
+  </div>
+  <div class="stack">
+    {% for attempt in latest_quiz_attempts %}
+    <article class="dashboard-activity-card">
+      <strong>{{ attempt.quiz.title }}</strong>
+      <span class="muted">{{ attempt.get_status_display }}</span>
+      <small class="muted">{{ attempt.percentage }}% {% if attempt.is_passed %}| Passed{% elif attempt.is_passed == False %}| Not Passed{% endif %}</small>
+    </article>
+    {% empty %}
+    <p class="muted">No quiz results yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel dashboard-board-panel">
+  <div class="panel-header">
+    <h2>Lesson Attention Tracking</h2>
+    <span class="badge">{{ attention_progress_rows|length }}</span>
+  </div>
+  <div class="stack">
+    {% for row in attention_progress_rows %}
+    <article class="dashboard-activity-card">
+      <strong>{{ row.lesson.title }}</strong>
+      <span class="muted">{{ row.lesson.module.title }}</span>
+      <small class="muted">Tab switches: {{ row.tab_switch_count }} | Window exits: {{ row.window_blur_count }} | Fullscreen: {{ row.fullscreen_entry_count }}</small>
+      <small class="muted">Reading speed: {{ row.reading_speed_wpm|floatformat:1 }} WPM | Risk: {{ row.attention_risk_level|title }}</small>
+    </article>
+    {% empty %}
+    <p class="muted">No tracked attention alerts yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<section class="dashboard-grid-4 dashboard-grid-tight">
+  <article class="card dashboard-stat-card">
+    <h2>Quiz Assignments</h2>
+    <p class="metric">{{ quiz_assignment_count }}</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>Quiz Attempts</h2>
+    <p class="metric">{{ quiz_attempt_count }}</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>Avg Quiz Score</h2>
+    <p class="metric">{{ quiz_average_score|floatformat:1 }}%</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>Attention Alerts</h2>
+    <p class="metric">{{ metrics.attention_flags }}</p>
+  </article>
+</section>
+
+<section class="panel dashboard-board-panel">
+  <div class="panel-header">
+    <div>
+      <h2>Analytics Filters</h2>
+      <p class="muted">Switch between overall, department-wise, and course-wise analytics.</p>
+    </div>
+  </div>
+  <form method="get" class="directory-filter-form analytics-filter-form">
+    <div class="directory-filter-grid">
+      <div>
+        <label for="analytics-department">Department</label>
+        <select id="analytics-department" class="calendar-input calendar-select" name="department">
+          <option value="">All Departments</option>
+          {% for department in available_departments %}
+          <option value="{{ department.id }}" {% if selected_department == department.id|stringformat:'s' %}selected{% endif %}>{{ department.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="analytics-course">Course</label>
+        <select id="analytics-course" class="calendar-input calendar-select" name="course">
+          <option value="">All Courses</option>
+          {% for course in available_courses %}
+          <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:'s' %}selected{% endif %}>{{ course.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field-span-2">
+        <label for="analytics-window">Time Window</label>
+        <select id="analytics-window" class="calendar-input calendar-select" name="window">
+          {% for value, label in window_options %}
+          <option value="{{ value }}" {% if selected_window == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="directory-filter-actions">
+      <button class="button" type="submit">Apply Filters</button>
+      <a class="button button-secondary" href="{% url 'dashboard-home' %}">Reset</a>
+    </div>
+  </form>
+</section>
+
+<section class="dashboard-grid-4 dashboard-grid-tight">
+  <article class="card dashboard-stat-card">
+    <h2>Weekly Avg Completion</h2>
+    <p class="metric">{{ weekly_completion_average|floatformat:1 }}%</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>Weekly Avg Quiz Score</h2>
+    <p class="metric">{{ weekly_quiz_average|floatformat:1 }}%</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>Departments In View</h2>
+    <p class="metric">{{ department_course_rows|length }}</p>
+  </article>
+  <article class="card dashboard-stat-card">
+    <h2>Courses In Filter</h2>
+    <p class="metric">{{ available_courses|length }}</p>
+  </article>
+</section>
+
+{% if best_department %}
+<section class="panel dashboard-board-panel">
+  <div class="panel-header">
+    <div>
+      <h2>Best Department In Current View</h2>
+      <p class="muted">Highest-performing department based on weekly and overall averages.</p>
+    </div>
+    <span class="badge" style="border-color: {{ best_department.department.color }};">{{ best_department.department.name }}</span>
+  </div>
+  <div class="dashboard-grid-4">
+    <article class="dashboard-activity-card">
+      <strong>Weekly Avg Completion</strong>
+      <span class="metric">{{ best_department.weekly_average_completion|floatformat:1 }}%</span>
+    </article>
+    <article class="dashboard-activity-card">
+      <strong>Weekly Avg Quiz Score</strong>
+      <span class="metric">{{ best_department.weekly_average_score|floatformat:1 }}%</span>
+    </article>
+    <article class="dashboard-activity-card">
+      <strong>Overall Completion</strong>
+      <span class="metric">{{ best_department.average_completion|floatformat:1 }}%</span>
+    </article>
+    <article class="dashboard-activity-card">
+      <strong>Active Learners</strong>
+      <span class="metric">{{ best_department.active_learners }}</span>
+    </article>
+  </div>
+</section>
+{% endif %}
+
+<section class="dashboard-grid-board">
+  <section class="panel dashboard-board-panel">
+    <div class="panel-header">
+      <h2>Active Learner Tasks</h2>
+      <span class="badge">{{ incomplete_enrollments|length }}</span>
+    </div>
+    <div class="stack">
+      {% for enrollment in incomplete_enrollments %}
+      <article class="dashboard-activity-card">
+        <strong>{{ enrollment.learner }}</strong>
+        <span>{{ enrollment.course.title }}</span>
+        <small class="muted">{{ enrollment.get_status_display }}</small>
+      </article>
+      {% empty %}
+      <p class="muted">No incomplete enrollments right now.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel dashboard-board-panel">
+    <div class="panel-header">
+      <h2>Upcoming Tasks</h2>
+      <span class="badge">{{ upcoming_tasks|length }}</span>
+    </div>
+    <div class="stack">
+      {% for event in upcoming_tasks %}
+      <article class="dashboard-activity-card">
+        <strong>{{ event.title }}</strong>
+        <span>{{ event.get_event_type_display }}</span>
+        <small class="muted">{{ event.department|default:"All Departments" }}</small>
+      </article>
+      {% empty %}
+      <p class="muted">No upcoming tasks scheduled.</p>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+
+<section class="dashboard-grid-board">
+  <section class="panel dashboard-board-panel">
+    <div class="panel-header">
+      <h2>Recent Quiz Assignments</h2>
+      <span class="badge">{{ recent_quiz_assignments|length }}</span>
+    </div>
+    <div class="stack">
+      {% for assignment in recent_quiz_assignments %}
+      <article class="dashboard-activity-card">
+        <strong>{{ assignment.quiz.title }}</strong>
+        <span class="muted">
+          {% if assignment.department %}Sector: {{ assignment.department.name }}{% elif assignment.learner %}Learner: {{ assignment.learner }}{% endif %}
+        </span>
+        <small class="muted">Due: {{ assignment.due_date|default:"Not set" }}</small>
+      </article>
+      {% empty %}
+      <p class="muted">No quiz assignments yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel dashboard-board-panel">
+    <div class="panel-header">
+      <h2>Recent Quiz Attempts</h2>
+      <span class="badge">{{ recent_quiz_attempts|length }}</span>
+    </div>
+    <div class="stack">
+      {% for attempt in recent_quiz_attempts %}
+      <article class="dashboard-activity-card">
+        <strong>{{ attempt.learner }}</strong>
+        <span>{{ attempt.quiz.title }}</span>
+        <small class="muted">{{ attempt.percentage }}%</small>
+      </article>
+      {% empty %}
+      <p class="muted">No quiz attempts yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+
+<section class="panel dashboard-table-panel dashboard-board-panel">
+  <div class="panel-header">
+    <h2>Department Quiz Analytics</h2>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Department</th>
+          <th>Assigned</th>
+          <th>Attempted</th>
+          <th>Average Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in department_quiz_rows %}
+        <tr>
+          <td>{{ row.department.name }}</td>
+          <td>{{ row.assigned }}</td>
+          <td>{{ row.attempted }}</td>
+          <td>{{ row.average|floatformat:1 }}%</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4">No department analytics available yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel dashboard-table-panel dashboard-board-panel">
+  <div class="panel-header">
+    <h2>Learner Attention Review</h2>
+    <span class="badge">Red flags</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Learner</th>
+          <th>Lesson</th>
+          <th>Tab Switches</th>
+          <th>Window Exits</th>
+          <th>Fullscreen</th>
+          <th>Reading Speed</th>
+          <th>Risk</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in attention_rows %}
+        <tr>
+          <td>{{ row.learner }}</td>
+          <td>{{ row.lesson.title }}</td>
+          <td>{{ row.tab_switch_count }}</td>
+          <td>{{ row.window_blur_count }}</td>
+          <td>{{ row.fullscreen_entry_count }}</td>
+          <td>{{ row.reading_speed_wpm|floatformat:1 }} WPM</td>
+          <td><span class="attention-risk attention-risk-{{ row.attention_risk_level }}">{{ row.attention_risk_level|title }}</span></td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7">No learner attention alerts yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel dashboard-table-panel dashboard-board-panel">
+  <div class="panel-header">
+    <div>
+      <h2>Department Course Breakdown</h2>
+      <p class="muted">Average department performance for the selected time window and course filters.</p>
+    </div>
+    <span class="badge">{{ department_course_rows|length }} departments</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Department</th>
+          <th>Active Learners</th>
+          <th>Completed</th>
+          <th>In Progress</th>
+          <th>Weekly Avg Completion</th>
+          <th>Weekly Avg Quiz</th>
+          <th>Overall Avg Completion</th>
+          <th>Overall Avg Quiz</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in department_course_rows %}
+        <tr>
+          <td>{{ row.department.name }}</td>
+          <td>{{ row.active_learners }}</td>
+          <td>{{ row.completed }}</td>
+          <td>{{ row.in_progress }}</td>
+          <td>{{ row.weekly_average_completion|floatformat:1 }}%</td>
+          <td>{{ row.weekly_average_score|floatformat:1 }}%</td>
+          <td>{{ row.average_completion|floatformat:1 }}%</td>
+          <td>{{ row.average_score|floatformat:1 }}%</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8">No department analytics available for the selected filters.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% if department_course_rows %}
+<section class="stack analytics-department-stack">
+  {% for row in department_course_rows %}
+  <article class="panel analytics-department-panel dashboard-board-panel">
+    <div class="panel-header">
+      <div>
+        <h2>{{ row.department.name }}</h2>
+        <p class="muted">Course breakdown inside this department.</p>
+      </div>
+      <span class="badge" style="border-color: {{ row.department.color }};">{{ row.course_rows|length }} courses</span>
+    </div>
+    <div class="dashboard-grid-4">
+      <article class="dashboard-activity-card">
+        <strong>Weekly Avg Completion</strong>
+        <span class="metric">{{ row.weekly_average_completion|floatformat:1 }}%</span>
+      </article>
+      <article class="dashboard-activity-card">
+        <strong>Weekly Avg Quiz Score</strong>
+        <span class="metric">{{ row.weekly_average_score|floatformat:1 }}%</span>
+      </article>
+      <article class="dashboard-activity-card">
+        <strong>Completed</strong>
+        <span class="metric">{{ row.completed }}</span>
+      </article>
+      <article class="dashboard-activity-card">
+        <strong>Not Started</strong>
+        <span class="metric">{{ row.not_started }}</span>
+      </article>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Learners</th>
+            <th>Completed</th>
+            <th>In Progress</th>
+            <th>Weekly Avg Completion</th>
+            <th>Weekly Avg Quiz</th>
+            <th>Overall Avg Completion</th>
+            <th>Overall Avg Quiz</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course_row in row.course_rows %}
+          <tr>
+            <td>{{ course_row.course.title }}</td>
+            <td>{{ course_row.learners }}</td>
+            <td>{{ course_row.completed }}</td>
+            <td>{{ course_row.in_progress }}</td>
+            <td>{{ course_row.weekly_average_completion|floatformat:1 }}%</td>
+            <td>{{ course_row.weekly_average_score|floatformat:1 }}%</td>
+            <td>{{ course_row.average_completion|floatformat:1 }}%</td>
+            <td>{{ course_row.average_score|floatformat:1 }}%</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8">No course analytics available for this department.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="panel dashboard-board-panel dashboard-next-panel">
+  <div class="panel-header">
+    <div>
+      <h2>Next Up: Calendar Planning</h2>
+      <p class="muted">Move from dashboard review into scheduling, follow-ups, and department planning without breaking flow.</p>
+    </div>
+    <span class="badge">Next Workspace</span>
+  </div>
+  <div class="action-row">
+    <a class="button" href="{% url 'calendar-board' %}">Go To Calendar</a>
+    <a class="button button-secondary" href="{% url 'calendar-manage-list' %}">Manage Tasks</a>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

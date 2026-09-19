@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Course{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h1>Delete Course</h1>
+      <p class="muted">This will remove the course and its related module structure.</p>
+    </div>
+    <a class="button button-secondary" href="{% url 'course-manage-list' %}">Cancel</a>
+  </div>
+
+  <form method="post" class="stack">
+    {% csrf_token %}
+    <p>Are you sure you want to delete <strong>{{ object.title }}</strong>?</p>
+    <button class="button button-danger" type="submit">Delete Course</button>
+  </form>
+</section>
+{% endblock %}
+

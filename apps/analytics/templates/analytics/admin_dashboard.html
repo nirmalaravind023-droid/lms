@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+<section class="dashboard-showcase dashboard-showcase-admin">
+  <article class="dashboard-showcase-main">
+    <div class="dashboard-showcase-heading">
+      <span class="badge">Analytics Center</span>
+      <a class="dashboard-inline-link" href="{% url 'dashboard-home' %}">Back To Dashboard</a>
+    </div>
+    <div class="dashboard-showcase-copy">
+      <div>
+        <h1>Analytics Dashboard</h1>
+        <p>Admin and department metrics for learner progress, assessments, and engagement in one clean board layout.</p>
+      </div>
+      <div class="action-row">
+        <a class="button" href="http://127.0.0.1:8501" target="_blank" rel="noreferrer">Open Streamlit</a>
+        <a class="button button-secondary" href="{% url 'course-list' %}">Open Sections</a>
+      </div>
+    </div>
+    <div class="dashboard-showcase-strip">
+      <article class="dashboard-pill-card">
+        <span>Total Enrollments</span>
+        <strong>{{ metrics.total_enrollments }}</strong>
+      </article>
+      <article class="dashboard-pill-card">
+        <span>Completion</span>
+        <strong>{{ metrics.average_completion|floatformat:1 }}%</strong>
+      </article>
+      <article class="dashboard-pill-card dashboard-pill-card-active">
+        <span>Quiz Score</span>
+        <strong>{{ metrics.average_quiz_score|floatformat:1 }}%</strong>
+      </article>
+      <article class="dashboard-pill-card">
+        <span>Pass Rate</span>
+        <strong>{{ metrics.pass_rate|floatformat:1 }}%</strong>
+      </article>
+    </div>
+  </article>
+</section>
+
+<section class="panel dashboard-board-panel">
+  <div class="panel-header">
+    <div>
+      <h1>Analytics Dashboard</h1>
+      <p class="muted">Admin and department metrics for learner progress, assessments, and engagement.</p>
+    </div>
+    <a class="button button-secondary" href="http://127.0.0.1:8501" target="_blank" rel="noreferrer">Open Streamlit</a>
+  </div>
+
+  <div class="card-grid dashboard-grid-tight">
+    <article class="card dashboard-stat-card">
+      <h2>Total Enrollments</h2>
+      <p class="metric">{{ metrics.total_enrollments }}</p>
+    </article>
+    <article class="card dashboard-stat-card">
+      <h2>Average Completion</h2>
+      <p class="metric">{{ metrics.average_completion|floatformat:1 }}%</p>
+    </article>
+    <article class="card dashboard-stat-card">
+      <h2>Average Watch Time</h2>
+      <p class="metric">{{ metrics.average_watch_time|floatformat:0 }} sec</p>
+    </article>
+    <article class="card dashboard-stat-card">
+      <h2>Average Quiz Score</h2>
+      <p class="metric">{{ metrics.average_quiz_score|floatformat:1 }}%</p>
+    </article>
+    <article class="card dashboard-stat-card">
+      <h2>Overdue</h2>
+      <p class="metric">{{ metrics.overdue_enrollments }}</p>
+    </article>
+    <article class="card dashboard-stat-card">
+      <h2>Pass Rate</h2>
+      <p class="metric">{{ metrics.pass_rate|floatformat:1 }}%</p>
+    </article>
+  </div>
+</section>
+{% endblock %}

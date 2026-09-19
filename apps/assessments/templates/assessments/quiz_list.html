@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Assessments{% endblock %}
+
+{% block content %}
+<section class="panel quiz-hero-panel">
+  <div class="panel-header">
+    <div>
+      <h1>Assessments</h1>
+      <p class="muted">Modern practice quizzes, evaluation rounds, and sector-based assessments.</p>
+    </div>
+    <div class="action-row">
+      {% if can_create_quiz %}
+      <a class="button" href="{% url 'quiz-create' %}" data-loading-link data-loading-label="Opening quiz builder...">Create Quiz</a>
+      {% endif %}
+    </div>
+  </div>
+  {% if can_assign_quiz %}
+  <div class="quiz-highlight-strip">
+    <article class="quiz-highlight-card">
+      <span class="badge">Live Readiness</span>
+      <h2>{{ assessment_overview.total_quizzes }} Assessments Ready</h2>
+      <p>{{ assessment_overview.total_assignments }} assignment(s) are active across this assessment hub.</p>
+    </article>
+    <article class="quiz-highlight-card quiz-highlight-card-alt">
+      <span class="badge">Attendance</span>
+      <h2>{{ assessment_overview.total_attendees }} People Attended</h2>
+      <p>{{ assessment_overview.attendance_rate }}% attendance against assigned learners.</p>
+    </article>
+    <article class="quiz-highlight-card">
+      <span class="badge">Marking Queue</span>
+      <h2>{{ assessment_overview.total_pending_review }} Pending Review</h2>
+      <p>{{ assessment_overview.total_passed }} passed attempt(s) are already finalized.</p>
+    </article>
+  </div>
+  {% endif %}
+  {% if can_assign_quiz %}
+  <section class="panel quiz-admin-table-panel">
+    <div class="panel-header">
+      <div>
+        <h2>Quiz Header Table</h2>
+        <p class="muted">Compact admin view by quiz number, department, section, module, and action.</p>
+      </div>
+      <span class="badge">{{ assessment_rows|length }}</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Quiz</th>
+            <th>Department</th>
+            <th>Section</th>
+            <th>Module</th>
+            <th>Sections</th>
+            <th>Pass</th>
+            <th>Assigned</th>
+            <th>Attempts</th>
+            <th>Pending</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in assessment_rows %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>
+              <strong>{{ row.quiz.title }}</strong>
+              <div class="muted">{{ row.quiz.category|default:"General" }}</div>
+            </td>
+            <td>{{ row.department.name|default:"-" }}</td>
+            <td>{{ row.course.title|default:"-" }}</td>
+            <td>{{ row.module.title|default:"-" }}</td>
+            <td>
+              <strong>{{ row.section_count }} section{{ row.section_count|pluralize }}</strong>
+              <div class="muted">{{ row.section_summary }}</div>
+            </td>
+            <td>{{ row.quiz.passing_score }}%</td>
+            <td>{{ row.quiz.assignment_total }}</td>
+            <td>{{ row.quiz.attempt_total }}</td>
+            <td>{{ row.quiz.pending_review_total }}</td>
+            <td class="action-row">
+              <a class="button button-secondary" href="{% url 'quiz-detail' row.quiz.id %}">Manage</a>
+              <a class="button button-ghost" href="{% url 'quiz-update' row.quiz.id %}">Edit</a>
+              <a class="button button-danger" href="{% url 'quiz-delete' row.quiz.id %}">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="11">No assessments available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% else %}
+  <div class="card-grid quiz-card-grid">
+    {% for row in learner_quiz_rows %}
+    <article class="card quiz-card">
+      <div class="quiz-card-top">
+        <span class="badge">{{ row.quiz.category|default:"General" }}</span>
+        <span class="quiz-state-pill quiz-state-pill-{{ row.status_tone }}">{{ row.status_label }}</span>
+      </div>
+      <h2><a href="{% url 'quiz-detail' row.quiz.id %}">{{ row.quiz.title }}</a></h2>
+      <p>{{ row.quiz.description|truncatechars:140 }}</p>
+      <div class="stack">
+        <p class="muted"><strong>Section:</strong> {{ row.course.title|default:"-" }}</p>
+        <p class="muted"><strong>Module:</strong> {{ row.module.title|default:"-" }}</p>
+        <p class="muted"><strong>Department:</strong> {{ row.department.name|default:"-" }}</p>
+        <p class="muted">{{ row.helper_text }}</p>
+      </div>
+      <div class="quiz-meta-chip-row">
+        <span class="badge">Completed {{ row.completed_count }}</span>
+        {% if row.latest_attempt and row.latest_attempt.status == "in_progress" %}
+        <span class="badge">Active Attempt</span>
+        {% else %}
+        <span class="badge">Remaining {{ row.remaining_attempts }}</span>
+        {% endif %}
+        {% if row.latest_attempt and row.latest_attempt.status != "in_progress" %}
+        <span class="badge">Latest {{ row.latest_attempt.percentage }}%</span>
+        {% endif %}
+      </div>
+      <div class="quiz-card-footer">
+        <div class="action-row">
+          <a class="button button-secondary" href="{{ row.action_url }}" data-loading-link data-loading-label="Opening quiz...">{{ row.action_label }}</a>
+          {% if row.latest_result_url and row.action_label != "View Result" %}
+          <a class="button button-ghost" href="{{ row.latest_result_url }}">Latest Result</a>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+    {% empty %}
+    <p>No assessments available.</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if can_assign_quiz %}
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Assessment Management</h2>
+      <span class="badge">{{ assignment_rows|length }}</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Section</th>
+            <th>Module</th>
+            <th>Quiz</th>
+            <th>Assigned To</th>
+            <th>Due</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for assignment in assignment_rows %}
+          <tr>
+            <td>
+              {% if assignment.department %}
+              {{ assignment.department.name }}
+              {% elif assignment.quiz.course and assignment.quiz.course.department %}
+              {{ assignment.quiz.course.department.name }}
+              {% elif assignment.quiz.module and assignment.quiz.module.course.department %}
+              {{ assignment.quiz.module.course.department.name }}
+              {% else %}
+              -
+              {% endif %}
+            </td>
+            <td>{% if assignment.quiz.course %}{{ assignment.quiz.course.title }}{% elif assignment.quiz.module and assignment.quiz.module.course %}{{ assignment.quiz.module.course.title }}{% else %}-{% endif %}</td>
+            <td>{{ assignment.quiz.module.title|default:"-" }}</td>
+            <td><strong>{{ assignment.quiz.title }}</strong></td>
+            <td>
+              {% if assignment.learner %}
+              {{ assignment.learner.get_full_name|default:assignment.learner.email }}
+              {% elif assignment.department %}
+              {{ assignment.department.name }}
+              {% else %}
+              Company
+              {% endif %}
+            </td>
+            <td>{{ assignment.due_date|default:"Not set" }}</td>
+            <td class="action-row">
+              <a class="button button-ghost" href="{% url 'quiz-update' assignment.quiz.id %}">Edit</a>
+              <a class="button button-danger" href="{% url 'quiz-delete' assignment.quiz.id %}">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7">No quiz assignments yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+</section>
+{% endblock %}

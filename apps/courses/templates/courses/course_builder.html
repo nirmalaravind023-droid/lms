@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Section Builder{% endblock %}
+
+{% block content %}
+<section class="builder-shell">
+  <section class="panel authoring-hero authoring-hero-studio">
+    <div class="authoring-hero-copy">
+      <span class="badge">HR Section Studio</span>
+      <div>
+        <h1>{{ course.title }}</h1>
+        <p class="muted">Arrange modules and lessons the way learners should move through them. Drag to reorder, shape the learning journey, and keep the department flow clean.</p>
+      </div>
+      <div class="action-row">
+        <a class="button" href="{% url 'module-create' course.slug %}">Add Module</a>
+        <a class="button button-secondary" href="{% url 'course-detail' course.slug %}">Preview Section</a>
+      </div>
+    </div>
+    <div class="authoring-hero-meta">
+      <article class="authoring-stat-card">
+        <span class="badge">Modules</span>
+        <strong>{{ course.modules.count }}</strong>
+        <p class="muted">Build the high-level learning chapters first.</p>
+      </article>
+      <article class="authoring-stat-card">
+        <span class="badge">Flow</span>
+        <strong>Section -> Module -> Lesson</strong>
+        <p class="muted">Design each department journey one lesson at a time with a clear order.</p>
+      </article>
+      <article class="authoring-stat-card">
+        <span class="badge">Tip</span>
+        <strong>Drag cards to rearrange</strong>
+        <p class="muted">Move modules and lessons until the learner flow matches the exact order HR wants.</p>
+      </article>
+    </div>
+  </section>
+
+  <section
+    id="course-builder"
+    class="builder-canvas"
+    data-module-url="{% url 'module-reorder' %}"
+    data-lesson-url="{% url 'lesson-reorder' %}"
+    data-csrf="{{ csrf_token }}"
+  >
+    <div class="builder-toolbar">
+      <div>
+        <h2>Section Flow Board</h2>
+        <p class="muted">Think of this like a lightweight learning storyboard for HR.</p>
+      </div>
+      <div class="action-row">
+        <a class="button button-secondary" href="{% url 'course-edit' course.slug %}">Edit Section Shell</a>
+        <a class="button" href="{% url 'module-create' course.slug %}">Add Module</a>
+      </div>
+    </div>
+    <div id="modules" class="builder-column builder-canvas">
+      {% for module in course.modules.all %}
+      <article class="builder-card builder-card-modern draggable-card" draggable="true" data-id="{{ module.id }}">
+        <header class="builder-card-header">
+          <div>
+            <div class="action-row">
+              <span class="badge" data-module-order-label>Module {{ module.order }}</span>
+              {% if module.is_mandatory %}<span class="badge">Mandatory</span>{% endif %}
+            </div>
+            <h2>{{ module.title }}</h2>
+            <p class="muted">{{ module.description|default:"Add a short description so HR and learners understand what this module covers." }}</p>
+          </div>
+          <div class="action-row">
+            <span class="builder-drag-handle" aria-hidden="true" title="Drag module">::</span>
+            <a class="button button-secondary" href="{% url 'module-edit' module.id %}">Edit</a>
+            <a class="button button-danger" href="{% url 'module-delete' module.id %}">Delete</a>
+          </div>
+        </header>
+        <div class="builder-module-ribbon">
+          <span>{{ module.lessons.count }} lesson{{ module.lessons.count|pluralize }}</span>
+          <span>{% if module.is_mandatory %}Mandatory for learners{% else %}Optional module{% endif %}</span>
+        </div>
+        <ul class="lesson-list sortable-lessons builder-lesson-stack">
+          {% for lesson in module.lessons.all %}
+          <li class="lesson-chip lesson-chip-draggable builder-lesson-card" draggable="true" data-id="{{ lesson.id }}">
+            <span class="builder-drag-handle" aria-hidden="true" title="Drag lesson">::</span>
+            {% if lesson.article_image %}
+            <img class="builder-lesson-thumb" src="{{ lesson.article_image.url }}" alt="{{ lesson.title }}">
+            {% elif lesson.media_file %}
+            <div class="builder-lesson-thumb builder-lesson-thumb-fallback">Video</div>
+            {% else %}
+            <div class="builder-lesson-thumb builder-lesson-thumb-fallback">{{ lesson.get_lesson_type_display|slice:":1" }}</div>
+            {% endif %}
+            <div class="builder-lesson-meta">
+              <span class="badge" data-lesson-order-label>Lesson {{ lesson.order }}</span>
+              <strong>{{ lesson.title }}</strong>
+              <span class="badge">{{ lesson.get_lesson_type_display }}</span>
+              {% if lesson.summary %}<span class="muted">{{ lesson.summary }}</span>{% endif %}
+            </div>
+            <div class="action-row">
+              <a class="button button-secondary" href="{% url 'lesson-edit' lesson.id %}">Edit</a>
+              <a class="button button-danger" href="{% url 'lesson-delete' lesson.id %}">Delete</a>
+            </div>
+          </li>
+          {% empty %}
+          <li class="lesson-chip builder-empty-state">
+            <strong>No lessons in this module yet.</strong>
+            <span class="muted">Add a video lesson, article lesson, or reading step to begin the learner flow.</span>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="action-row">
+          <a class="button button-secondary" href="{% url 'lesson-create' module.id %}">Add Lesson</a>
+        </div>
+      </article>
+      {% empty %}
+      <article class="builder-card builder-card-modern builder-empty-state">
+        <strong>No modules created yet.</strong>
+        <span class="muted">Start with the first module, then add lessons under it for video, article, and quiz flow.</span>
+        <div class="action-row">
+          <a class="button" href="{% url 'module-create' course.slug %}">Create First Module</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/course_builder.js' %}"></script>
+{% endblock %}

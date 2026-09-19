@@ -1,0 +1,60 @@
+<article
+  class="card quiz-question-card"
+  id="question-{{ item.question.id }}"
+  data-question-card
+  data-question-index="{{ item.global_number|add:-1 }}"
+  data-question-id="{{ item.question.id }}"
+  data-question-seconds="{{ item.question.suggested_seconds|default:0 }}"
+  data-section-index="{{ section.index }}"
+  data-section-question-number="{{ item.section_question_number }}"
+  data-global-question-number="{{ item.global_number }}"
+  {% if item.question.style_config.spacing %}style="gap: {{ item.question.style_config.spacing }}px;"{% endif %}
+>
+  <div class="quiz-question-header">
+    <span class="badge">{{ item.question.get_question_type_display }}</span>
+    <span class="badge">{{ section.label }}</span>
+    <span class="badge">Question {{ item.section_question_number }} / {{ section.question_count }}</span>
+  </div>
+  <div class="quiz-question-timer-row">
+    <div class="quiz-meta-chip-row">
+      <span class="badge quiz-clock-badge">Exam Timer</span>
+      <strong data-quiz-main-timer>--:--</strong>
+    </div>
+    <div class="quiz-meta-chip-row">
+      <span class="badge">{% if item.question.suggested_seconds %}Suggested Pace{% else %}Question Pace{% endif %}</span>
+      <strong data-question-timer>Flexible</strong>
+    </div>
+  </div>
+  <div class="action-row quiz-question-nav-row">
+    <button class="button button-secondary" type="button" data-prev-question>Previous</button>
+    <button class="button button-secondary" type="button" data-next-question>Next</button>
+  </div>
+  <h2{% if item.question.style_config.font_family or item.question.style_config.color %} style="{% if item.question.style_config.font_family %}font-family: '{{ item.question.style_config.font_family }}', sans-serif;{% endif %}{% if item.question.style_config.color %} color: {{ item.question.style_config.color }};{% endif %}"{% endif %}>
+    Q{{ item.global_number }}. {{ item.question.prompt }}
+  </h2>
+  <p class="muted">
+    {{ item.question.marks }} marks{% if item.question.negative_marks %} | -{{ item.question.negative_marks }} negative{% endif %}{% if item.question.suggested_seconds %} | {{ item.question.suggested_seconds }} sec suggested{% endif %}
+  </p>
+
+  {% if item.question.question_type == "single_choice" or item.question.question_type == "true_false" %}
+  <div class="quiz-option-group">
+    {% for choice in item.question.choices.all %}
+    <label class="quiz-option-card">
+      <input type="radio" name="question_{{ item.question.id }}" value="{{ choice.id }}">
+      <span>{{ choice.text }}</span>
+    </label>
+    {% endfor %}
+  </div>
+  {% elif item.question.question_type == "multiple_choice" %}
+  <div class="quiz-option-group">
+    {% for choice in item.question.choices.all %}
+    <label class="quiz-option-card">
+      <input type="checkbox" name="question_{{ item.question.id }}" value="{{ choice.id }}">
+      <span>{{ choice.text }}</span>
+    </label>
+    {% endfor %}
+  </div>
+  {% else %}
+  <textarea name="question_{{ item.question.id }}" rows="4" placeholder="Write your answer here" data-question-textarea></textarea>
+  {% endif %}
+</article>

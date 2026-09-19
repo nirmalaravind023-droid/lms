@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if builder_mode == "edit" %}Edit Quiz{% else %}Create Quiz{% endif %}{% endblock %}
+
+{% block content %}
+<section class="panel quiz-hero-panel">
+    <div class="panel-header">
+      <div>
+        <span class="badge">Quiz Builder</span>
+        <h1>{% if builder_mode == "edit" %}Edit Quiz{% else %}Create Quiz{% endif %}</h1>
+      <p class="muted">{% if builder_mode == "edit" %}Update questions, options, and assignment settings from one screen.{% else %}Build the quiz and assign it from one screen.{% endif %}</p>
+      </div>
+    <div class="action-row">
+      {% if builder_mode == "edit" %}
+      <a class="button button-danger" href="{% url 'quiz-delete' form.instance.id %}">Delete Quiz</a>
+      {% endif %}
+      <a class="button button-secondary" href="{% url 'quiz-list' %}">Back</a>
+    </div>
+  </div>
+
+  <form method="post" class="stack quiz-builder-form" data-quiz-builder data-loading-form data-loading-label="Saving quiz...">
+    {% csrf_token %}
+    {{ quiz_builder_filter_json|json_script:"quiz-builder-filter-data" }}
+    {{ initial_questions_payload|json_script:"quiz-builder-initial-questions" }}
+    <div class="quiz-builder-shell">
+      <div class="quiz-builder-main">
+        <section class="quiz-builder-summary-grid">
+          <article class="quiz-builder-summary-card">
+            <span class="badge">Marks</span>
+            <strong data-summary-total-marks>0</strong>
+            <p class="muted">Total positive marks across all questions.</p>
+          </article>
+          <article class="quiz-builder-summary-card">
+            <span class="badge">Negative</span>
+            <strong data-summary-negative-marks>0</strong>
+            <p class="muted">Possible negative marks if wrong answers are chosen.</p>
+          </article>
+          <article class="quiz-builder-summary-card">
+            <span class="badge">Timing</span>
+            <strong data-summary-total-time>0 min</strong>
+            <p class="muted">Combined question timers plus the overall quiz time limit.</p>
+          </article>
+          <article class="quiz-builder-summary-card">
+            <span class="badge">Pass Mark</span>
+            <strong data-summary-pass-mark>0</strong>
+            <p class="muted">Auto-calculated from the pass percentage below.</p>
+          </article>
+        </section>
+
+        <section class="card compact-card quiz-builder-flow-status">
+          <div class="panel-header">
+            <div>
+              <h2>Department -> Course -> Module</h2>
+              <p class="muted">Choose the department first. Then connect the quiz to one course flow and one module.</p>
+            </div>
+            <span class="badge" data-flow-status-badge>Ready</span>
+          </div>
+          <strong data-flow-status-title>Choose the course flow for this quiz.</strong>
+          <p class="muted" data-flow-status-text>Pick the department, then choose the course and module you want this quiz to connect to.</p>
+        </section>
+
+        <div class="quiz-assignment-grid">
+          <div class="field-span-2">
+            <label for="{{ form.title.id_for_label }}">Quiz Title</label>
+            {{ form.title }}
+          </div>
+          <div class="field-span-2">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+          </div>
+          <div>
+            <label for="{{ form.assessment_type.id_for_label }}">Mode</label>
+            {{ form.assessment_type }}
+          </div>
+          <div class="field-span-2">
+            <label for="{{ form.instructions.id_for_label }}">Instructions Before Start</label>
+            {{ form.instructions }}
+          </div>
+          <div>
+            <label for="{{ form.department.id_for_label }}">Department</label>
+            {{ form.department }}
+            <p class="muted">Selecting a department filters the connected courses and modules below.</p>
+          </div>
+          <div>
+            <label for="{{ form.course.id_for_label }}">Course</label>
+            {{ form.course }}
+            <p class="muted">Pick the course first, then the module list will load correctly.</p>
+          </div>
+          <div>
+            <label for="{{ form.module.id_for_label }}">Module</label>
+            {{ form.module }}
+            <p class="muted" data-module-helper>Choose the module inside the selected course flow. If nothing appears, create the course or module first.</p>
+          </div>
+          <div>
+            <label for="{{ form.status.id_for_label }}">Status</label>
+            {{ form.status }}
+          </div>
+          <div>
+            <label for="{{ form.passing_score.id_for_label }}">Passing Score</label>
+            {{ form.passing_score }}
+            <p class="muted">Pass score stays as a percentage, and the exact marks needed are shown in the summary above.</p>
+          </div>
+          <div>
+            <label for="{{ form.time_limit_minutes.id_for_label }}">Time Limit Minutes</label>
+            {{ form.time_limit_minutes }}
+            <p class="muted">Set 0 if you want only per-question guidance without a hard total timer.</p>
+          </div>
+          <div>
+            <label for="{{ form.allow_multiple_attempts.id_for_label }}">Allow Multiple Attempts</label>
+            {{ form.allow_multiple_attempts }}
+          </div>
+          <div>
+            <label for="{{ form.max_attempts.id_for_label }}">Max Attempts</label>
+            {{ form.max_attempts }}
+          </div>
+          <div>
+            <label for="{{ form.allow_continue_on_fail.id_for_label }}">Allow Continue On Fail</label>
+            {{ form.allow_continue_on_fail }}
+          </div>
+        </div>
+
+        <section class="quiz-builder-question-shell">
+          <div class="panel-header">
+              <div>
+                <h2>Questions</h2>
+                <p class="muted">
+                  {% if builder_mode == "edit" %}
+                  {{ existing_question_count }} saved question{{ existing_question_count|pluralize }} loaded below. Update the prompt, section, answers, or options directly here.
+                  {% else %}
+                  Add MCQ, MSQ, true/false, fill-in, or long-answer questions. Section names are supported directly on each question.
+                  {% endif %}
+                </p>
+                <p class="muted">Use Add Section to start a new section with the next section label automatically. Drag question cards to change the order. Use Remove to delete a question before saving.</p>
+              </div>
+            <div class="action-row">
+              <button class="button button-secondary" type="button" data-add-section>+ Add Section</button>
+              <button class="button" type="button" data-add-question>+ Add Question</button>
+            </div>
+            </div>
+          {% if builder_mode == "edit" and form.instance.questions.exists %}
+          <section class="card compact-card quiz-builder-preview-shell">
+            <div class="panel-header">
+              <div>
+                <span class="badge">Saved Preview</span>
+                <h3>Server-rendered saved questions</h3>
+                <p class="muted">This preview shows the questions already stored in the quiz, even if the live builder script does not load.</p>
+              </div>
+            </div>
+            <div class="stack">
+              {% for saved_question in form.instance.questions.all %}
+              <article class="card compact-card quiz-builder-preview-card">
+                <div class="quiz-meta-chip-row">
+                  <span class="badge">Question {{ forloop.counter }}</span>
+                  <span class="badge">{% if saved_question.section_title %}{{ saved_question.section_title }}{% else %}General Section{% endif %}</span>
+                  <span class="badge">{{ saved_question.get_question_type_display }}</span>
+                </div>
+                <strong>{{ saved_question.prompt }}</strong>
+                <p class="muted">
+                  {{ saved_question.marks }} marks{% if saved_question.negative_marks %} | -{{ saved_question.negative_marks }} negative{% endif %}{% if saved_question.suggested_seconds %} | {{ saved_question.suggested_seconds }} sec{% endif %}
+                </p>
+                {% if saved_question.explanation %}
+                <p class="muted"><strong>Explanation:</strong> {{ saved_question.explanation }}</p>
+                {% endif %}
+                {% if saved_question.correct_answer_text %}
+                <p class="muted"><strong>Correct text answer:</strong> {{ saved_question.correct_answer_text }}</p>
+                {% endif %}
+                {% if saved_question.choices.exists %}
+                <ul class="quiz-builder-preview-options">
+                  {% for saved_choice in saved_question.choices.all %}
+                  <li>
+                    <span>{{ saved_choice.text }}</span>
+                    {% if saved_choice.is_correct %}<strong>Correct</strong>{% endif %}
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% else %}
+                <p class="muted">No option list. This question uses text or descriptive answering.</p>
+                {% endif %}
+              </article>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
+          <div class="stack" data-question-list></div>
+          <input type="hidden" name="questions_payload" value="[]" data-questions-payload>
+        </section>
+
+        <section class="quiz-builder-question-shell">
+            <div class="panel-header">
+              <div>
+                <h2>Assignment</h2>
+                <p class="muted">Optional: choose who should receive this quiz when you save.</p>
+              </div>
+            </div>
+            <div class="quiz-assignment-grid">
+              <div class="field-span-2">
+                <label for="{{ form.assign_department.id_for_label }}">Department Access</label>
+                {{ form.assign_department }}
+                <p class="muted">Choose one department. Learners in that department can get this quiz automatically.</p>
+              </div>
+            <div class="field-span-2">
+              <label for="{{ form.assign_due_date.id_for_label }}">Assignment Due Date</label>
+              <div class="quiz-due-date-shell" data-holiday-widget>
+                <div class="quiz-due-date-header">
+                  <div>
+                    <span class="badge">Schedule</span>
+                    <strong>Pick the final deadline</strong>
+                    <p class="muted">Set one clear target date for the department or selected learners, then check holidays before saving.</p>
+                  </div>
+                </div>
+                <div class="quiz-due-date-input-row">
+                  <div class="quiz-due-date-input-wrap">
+                    {{ form.assign_due_date }}
+                  </div>
+                  <label class="holiday-help-toggle">
+                    <input type="checkbox" data-holiday-toggle>
+                    <span>Check India holidays for this date</span>
+                  </label>
+                </div>
+                <div class="holiday-help" data-holiday-help hidden>
+                  <strong data-holiday-note>Selected date is not one of the built-in India national holidays.</strong>
+                  <ul data-holiday-list></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {% if form.errors %}
+        <div class="form-error-stack">
+          {{ form.non_field_errors }}
+          {% for field in form %}
+            {{ field.errors }}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <div class="quiz-assignment-actions">
+      <button class="button" type="submit" data-loading-button>{% if builder_mode == "edit" %}Save Quiz Changes{% else %}Save {{ form.instance.get_assessment_type_display|default:"Assessment" }} And Assign{% endif %}</button>
+      <a class="button button-secondary" href="{% url 'quiz-list' %}" data-loading-link data-loading-label="Leaving builder...">Cancel</a>
+    </div>
+  </form>
+</section>
+
+<template id="quiz-question-template">
+  <article class="card compact-card quiz-builder-question-card" data-question-card>
+    <div class="quiz-builder-section-banner" data-question-section-banner hidden>
+      <span class="badge">Section</span>
+      <strong data-question-section-label>Section A</strong>
+    </div>
+    <div class="panel-header">
+      <div class="stack">
+        <strong data-question-heading>Question</strong>
+        <span class="muted">Edit the question, edit the options, drag to reorder, or use Move Up / Move Down.</span>
+      </div>
+      <div class="action-row">
+        <button class="button button-ghost" type="button" data-move-question-up>Move Up</button>
+        <button class="button button-ghost" type="button" data-move-question-down>Move Down</button>
+        <button class="button button-danger" type="button" data-remove-question>Delete Question</button>
+      </div>
+    </div>
+    <div class="quiz-assignment-grid">
+      <div class="field-span-2">
+        <label>Question Prompt</label>
+        <textarea class="calendar-input" rows="3" data-question-prompt placeholder="Enter the question"></textarea>
+      </div>
+      <div>
+        <label>Section</label>
+        <input class="calendar-input" type="text" data-question-section placeholder="Section A / Part 1">
+        <p class="muted">Change this to move the question from one section to another, like Section A to Section B.</p>
+      </div>
+      <div>
+        <label>Question Type</label>
+        <select class="calendar-input calendar-select" data-question-type>
+          {% for value, label in question_types %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Marks</label>
+        <input class="calendar-input" type="number" min="1" value="1" data-question-marks>
+      </div>
+      <div>
+        <label>Negative Marks</label>
+        <input class="calendar-input" type="number" min="0" step="0.25" value="0" data-question-negative-marks>
+      </div>
+      <div>
+        <label>Question Timer (seconds)</label>
+        <input class="calendar-input" type="number" min="0" value="0" data-question-seconds>
+      </div>
+      <div class="field-span-2">
+        <span class="badge" data-question-type-preview>MCQ</span>
+        <span class="muted" data-question-type-description>One correct option is allowed for this question.</span>
+      </div>
+      <div class="field-span-2">
+        <label>Explanation</label>
+        <textarea class="calendar-input" rows="2" data-question-explanation placeholder="Optional explanation shown after grading"></textarea>
+      </div>
+      <div class="field-span-2 quiz-builder-text-answer" data-text-answer-wrap hidden>
+        <label>Correct Fill-In Answer</label>
+        <input class="calendar-input" type="text" data-question-correct-text placeholder="Enter the exact answer admin wants to accept">
+      </div>
+      <div class="field-span-2 quiz-style-shell">
+        <h3>Style</h3>
+        <p class="muted">Tune font, color, and spacing for this question block.</p>
+        <div class="quiz-assignment-grid">
+          <div>
+            <label>Font Family</label>
+            <select class="calendar-input calendar-select" data-style-font-family>
+              <option value="">Default</option>
+              <option value="Segoe UI">Segoe UI</option>
+              <option value="Verdana">Verdana</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Trebuchet MS">Trebuchet MS</option>
+            </select>
+          </div>
+          <div>
+            <label>Text Color</label>
+            <input class="calendar-color-input" type="color" value="#0f172a" data-style-color>
+          </div>
+          <div>
+            <label>Spacing</label>
+            <input class="calendar-input" type="number" min="8" max="28" value="14" data-style-spacing>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="quiz-builder-option-shell" data-option-shell>
+      <div class="panel-header">
+        <strong>Options / Answers</strong>
+        <button class="button button-secondary" type="button" data-add-option>+ Add Option</button>
+      </div>
+      <div class="stack" data-option-list></div>
+    </div>
+  </article>
+</template>
+
+<template id="quiz-option-template">
+  <div class="quiz-builder-option-row" data-option-row>
+    <input class="calendar-input" type="text" data-option-text placeholder="Option text">
+    <label class="quiz-builder-answer-toggle">
+      <input type="checkbox" data-option-correct>
+      <span>Correct</span>
+    </label>
+    <button class="button button-secondary" type="button" data-remove-option>Remove</button>
+  </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+{{ india_holiday_map_json|json_script:"india-holiday-map" }}
+<script src="{% static 'js/quiz_builder.js' %}?v=20260403b"></script>
+<script src="{% static 'js/date_holidays.js' %}?v=20260402b"></script>
+{% endblock %}

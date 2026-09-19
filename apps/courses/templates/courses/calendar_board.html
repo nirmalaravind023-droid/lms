@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Calendar{% endblock %}
+
+{% block content %}
+<section
+  id="react-calendar-root"
+  class="react-calendar-shell"
+  data-endpoint="{% url 'calendar-board-data' %}"
+  data-initial-month="{{ current_month }}"
+  data-initial-year="{{ display_year }}"
+  data-initial-department="{{ selected_department }}"
+></section>
+
+<noscript>
+  <section class="panel">
+    <h1>Calendar</h1>
+    <p class="muted">Enable JavaScript to use the modern calendar view.</p>
+  </section>
+</noscript>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/react/calendar-board.js' %}?v=20260406a"></script>
+{% endblock %}

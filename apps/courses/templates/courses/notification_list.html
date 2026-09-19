@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h1>Notifications</h1>
+      <p class="muted">Review employee join requests here and open learner alerts for lessons, sections, assessments, approvals, and comments below.</p>
+    </div>
+  </div>
+  {% if pending_lifecycle_requests %}
+  <div class="stack" style="margin-bottom: 20px;">
+    {% for request_item in pending_lifecycle_requests %}
+    <article class="card compact-card">
+      <strong>{{ request_item.target_user.get_full_name|default:request_item.target_user.username }} is waiting for approval</strong>
+      <p class="muted">
+        {{ request_item.target_user.email }}
+        {% if request_item.target_user.department %} | Requested: {{ request_item.target_user.department.name }}{% endif %}
+      </p>
+      <form method="post" action="{% url 'user-lifecycle-request-decision' request_item.id %}" class="stack">
+        {% csrf_token %}
+        <div>
+          <label for="notification-request-{{ request_item.id }}">Department / Sector</label>
+          <select name="requested_department" id="notification-request-{{ request_item.id }}">
+            {% for department in company_departments %}
+            <option value="{{ department.id }}"{% if request_item.requested_department_id == department.id or request_item.target_user.department_id == department.id %} selected{% endif %}>
+              {{ department.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="action-row">
+          <button class="button button-secondary" type="submit" name="decision" value="approve">Approve</button>
+          <button class="button button-danger" type="submit" name="decision" value="reject">Reject</button>
+          <a class="button button-secondary" href="{% url 'user-transfer' request_item.target_user.id %}">Open Transfer</a>
+        </div>
+      </form>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="stack">
+    {% for notification in notifications %}
+    <article class="card compact-card notification-card {{ notification.accent_class }}">
+      <div class="panel-header">
+        <div class="notification-card-heading">
+          <span class="notification-icon {{ notification.accent_class }}">{{ notification.icon_text }}</span>
+          <div class="stack">
+            <span class="badge notification-kind-badge {{ notification.accent_class }}">{{ notification.badge_label }}</span>
+            <strong>{{ notification.message }}</strong>
+          </div>
+        </div>
+        {% if not notification.is_read %}
+        <span class="badge">New</span>
+        {% endif %}
+      </div>
+      <p class="muted">{{ notification.created_at }} | {{ notification.course.title }}</p>
+      {% if notification.actor %}
+      <p class="muted">From {{ notification.actor.get_full_name|default:notification.actor.email }}</p>
+      {% endif %}
+      <div class="action-row">
+        <a class="button" href="{% url 'notification-open' notification.id %}">{{ notification.action_label }}</a>
+      </div>
+    </article>
+    {% empty %}
+    {% if not pending_lifecycle_requests %}
+    <p class="muted">No notifications right now.</p>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% include "includes/pagination.html" with page_obj=notifications_page page_numbers=notifications_page_numbers pagination_query=notifications_pagination_query page_param=notifications_page_param page_label="Notifications pagination" %}
+</section>
+{% endblock %}

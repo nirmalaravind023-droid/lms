@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Assign Quiz{% endblock %}
+
+{% block content %}
+<section class="panel quiz-hero-panel">
+  <div class="panel-header">
+    <div>
+      <span class="badge">Assessment Flow</span>
+      <h1>Assign Quiz</h1>
+      <p class="muted">Assign one quiz to a whole department, to selected learners, or both. Learners only see the assignments meant for their department or their own account.</p>
+    </div>
+    <a class="button button-secondary" href="{% url 'quiz-list' %}">Back</a>
+  </div>
+
+  <form method="post" class="stack quiz-assignment-form">
+    {% csrf_token %}
+    <div class="quiz-assignment-layout">
+      <div class="quiz-assignment-main">
+        <div class="quiz-assignment-grid">
+          <div class="field-span-2">
+            <label for="{{ form.quiz.id_for_label }}">Quiz</label>
+            {{ form.quiz }}
+          </div>
+          <div class="field-span-2">
+            <label for="{{ form.department.id_for_label }}">Department</label>
+            {{ form.department }}
+          </div>
+          <div class="field-span-2">
+            <label for="{{ form.learners.id_for_label }}">Selected Learners</label>
+            {{ form.learners }}
+            <p class="muted">Optional: choose one or many people directly. Leave this empty if the full department should receive the quiz.</p>
+          </div>
+          <div class="field-span-2">
+            <label for="{{ form.due_date.id_for_label }}">Due Date</label>
+            {{ form.due_date }}
+          </div>
+        </div>
+
+        {% if form.errors %}
+        <div class="form-error-stack">
+          {{ form.non_field_errors }}
+          {% for field in form %}
+            {{ field.errors }}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <aside class="quiz-assignment-side">
+        <span class="badge">Quick Guide</span>
+        <h2>Who should receive this?</h2>
+        <div class="quiz-assignment-hints">
+          <div class="quiz-assignment-hint">
+            <strong>Department assignment</strong>
+            <span>All learners in that department will see the quiz in their assessments and dashboard flow.</span>
+          </div>
+          <div class="quiz-assignment-hint">
+            <strong>Selected learners</strong>
+            <span>Use this when only a few named people should receive the quiz, even if others in the department do not.</span>
+          </div>
+          <div class="quiz-assignment-hint">
+            <strong>Due date</strong>
+            <span>The learner calendar and HR tracking will use this date.</span>
+          </div>
+          <div class="quiz-assignment-hint">
+            <strong>Flow</strong>
+            <span>Create the quiz first, assign it to a department here, and learners will see it automatically.</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="quiz-assignment-actions">
+      <button class="button" type="submit">Assign Quiz</button>
+      <a class="button button-secondary" href="{% url 'quiz-list' %}">Back To Assessments</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

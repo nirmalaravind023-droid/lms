@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <title>Register</title>
+    <link rel="stylesheet" href="/static/css/app.css?v=20260403b">
+  </head>
+  <body class="auth-body">
+    <section class="auth-card wide-auth-card">
+      <h1>Employee Registration Request</h1>
+      <p class="muted">Choose one of the departments already created by HR or a manager, like Sales, HR, Finance, or other sectors available for your company. After registration, HR or a manager approves the account first. Then the system generates the employee ID, and login works with username or email plus password.</p>
+      <form method="post" class="stack" id="register-form">
+        {% csrf_token %}
+        {{ form.employee_code }}
+        {% if form.non_field_errors %}
+        <div class="flash-stack">
+          {% for error in form.non_field_errors %}
+          <div class="flash">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div>
+          <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+          {{ form.first_name }}
+          {% if form.first_name.help_text %}<p class="muted">{{ form.first_name.help_text }}</p>{% endif %}
+          {{ form.first_name.errors }}
+        </div>
+        <div>
+          <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+          {{ form.last_name }}
+          {% if form.last_name.help_text %}<p class="muted">{{ form.last_name.help_text }}</p>{% endif %}
+          {{ form.last_name.errors }}
+        </div>
+        <div>
+          <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+          {{ form.email }}
+          {% if form.email.help_text %}<p class="muted">{{ form.email.help_text }}</p>{% endif %}
+          {{ form.email.errors }}
+        </div>
+        <div>
+          <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+          {{ form.username }}
+          {% if form.username.help_text %}<p class="muted">{{ form.username.help_text }}</p>{% endif %}
+          {{ form.username.errors }}
+        </div>
+        <div>
+          <label for="{{ form.phone_number.id_for_label }}">{{ form.phone_number.label }}</label>
+          {{ form.phone_number }}
+          {% if form.phone_number.help_text %}<p class="muted">{{ form.phone_number.help_text }}</p>{% endif %}
+          {{ form.phone_number.errors }}
+        </div>
+        <div>
+          <label for="{{ form.department.id_for_label }}">{{ form.department.label }}</label>
+          {{ form.department }}
+          {% if form.department.help_text %}<p class="muted">{{ form.department.help_text }}</p>{% endif %}
+          {{ form.department.errors }}
+        </div>
+        <div>
+          <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+          <div class="password-field">
+            {{ form.password1 }}
+            <button class="button button-secondary password-toggle" type="button" data-target="{{ form.password1.id_for_label }}">Show</button>
+          </div>
+          {% if form.password1.help_text %}<p class="muted">{{ form.password1.help_text }}</p>{% endif %}
+          {{ form.password1.errors }}
+        </div>
+        <div>
+          <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+          <div class="password-field">
+            {{ form.password2 }}
+            <button class="button button-secondary password-toggle" type="button" data-target="{{ form.password2.id_for_label }}">Show</button>
+          </div>
+          {% if form.password2.help_text %}<p class="muted">{{ form.password2.help_text }}</p>{% endif %}
+          {{ form.password2.errors }}
+        </div>
+        <button class="button" type="submit">Submit For Approval</button>
+      </form>
+      <p class="muted">After HR or manager approval, sign in with your username or email and password. Your employee ID will then appear inside the LMS user area on the left side.</p>
+    </section>
+    <div class="global-error-modal" data-global-error-modal hidden>
+      <div class="global-error-modal-card" role="alertdialog" aria-live="assertive" aria-modal="true">
+        <div class="panel-header">
+          <div>
+            <span class="badge" data-global-error-badge>Error</span>
+            <strong data-global-error-title>What is the error?</strong>
+          </div>
+          <button class="button button-secondary" type="button" data-global-error-close>Close</button>
+        </div>
+        <div class="stack" data-global-error-body></div>
+      </div>
+    </div>
+    <script src="/static/js/shell.js"></script>
+    <script>
+      window.addEventListener("pageshow", function(event) {
+        if (event.persisted) {
+          window.location.reload();
+        }
+      });
+
+      document.querySelectorAll(".password-toggle").forEach(function(button) {
+        button.addEventListener("click", function() {
+          var target = document.getElementById(button.dataset.target);
+          if (!target) {
+            return;
+          }
+          target.type = target.type === "password" ? "text" : "password";
+          button.textContent = target.type === "password" ? "Show" : "Hide";
+        });
+      });
+    </script>
+  </body>
+</html>

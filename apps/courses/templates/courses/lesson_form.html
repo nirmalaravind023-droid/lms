@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Lesson Form{% endblock %}
+
+{% block content %}
+<section class="authoring-shell">
+  <section class="panel authoring-hero authoring-hero-studio">
+    <div class="authoring-hero-copy">
+      <span class="badge">Lesson Studio</span>
+      <div>
+        <h1>{% if object %}Edit Lesson{% else %}Create Lesson{% endif %}</h1>
+        <p class="muted">Create an article, PDF, video, or external material lesson under <strong>{{ module.title }}</strong> in <strong>{{ course.title }}</strong>.</p>
+      </div>
+      <div class="action-row">
+        <a class="button button-secondary" href="{% url 'course-builder' course.slug %}">Back To Section Builder</a>
+      </div>
+    </div>
+    <div class="authoring-hero-meta">
+      <article class="authoring-stat-card">
+        <span class="badge">Article Lesson</span>
+        <strong>Image First Layout</strong>
+        <p class="muted">Upload a cover image and the learner will see the image at the top and the article content below it.</p>
+      </article>
+      <article class="authoring-stat-card">
+        <span class="badge">PDF Lesson</span>
+        <strong>Books, Notes, Material</strong>
+        <p class="muted">Use this for PDFs, handbooks, worksheets, or reference books that should open in a new tab.</p>
+      </article>
+      <article class="authoring-stat-card">
+        <span class="badge">Video Lesson</span>
+        <strong>Two Source Options</strong>
+        <p class="muted">Use YouTube for linked playback or upload a local file for tracked in-LMS playback.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="authoring-grid authoring-grid-wide">
+    <section class="panel authoring-form-card">
+      <form method="post" enctype="multipart/form-data" class="authoring-form-layout" data-authoring-studio data-loading-form data-loading-label="Uploading lesson files...">
+        {% csrf_token %}
+        <section class="authoring-section-header">
+          <div>
+            <h2>Lesson Basics</h2>
+            <p class="muted">Choose the lesson type first. The form below adapts so HR can focus on the right content inputs.</p>
+          </div>
+          <span class="badge" data-current-lesson-type>Article</span>
+        </section>
+        <div class="authoring-form-grid">
+          <div class="authoring-field">
+            <label for="{{ form.title.id_for_label }}">Lesson Title</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+          </div>
+          <div class="authoring-field">
+            <label for="{{ form.lesson_type.id_for_label }}">Lesson Type</label>
+            <div data-lesson-type-field-wrap>
+              {{ form.lesson_type }}
+            </div>
+            {{ form.lesson_type.errors }}
+          </div>
+          <div class="authoring-field authoring-field-full">
+            <label for="{{ form.summary.id_for_label }}">Summary</label>
+            {{ form.summary }}
+            {{ form.summary.errors }}
+          </div>
+        </div>
+
+        <section class="authoring-preview-strip authoring-preview-strip-wide">
+          <article class="authoring-preview-card">
+            <span class="badge">Video Pattern</span>
+            <strong>Lesson Opens With Full Media</strong>
+            <p class="muted">Use this for walkthroughs, demos, process videos, and anything learners should watch before moving on.</p>
+          </article>
+          <article class="authoring-preview-card">
+            <span class="badge">Article Pattern</span>
+            <strong>Image First, Article Below</strong>
+            <p class="muted">Upload a top image, then write the article. The learner sees the image first, then the reading content.</p>
+          </article>
+          <article class="authoring-preview-card">
+            <span class="badge">Resource Pattern</span>
+            <strong>PDF Or Recommended Material</strong>
+            <p class="muted">Best for books, policy PDFs, notes, and outside material that learners should open separately in a new tab.</p>
+          </article>
+        </section>
+
+        <div class="lesson-type-panels">
+          <section class="lesson-panel" data-lesson-panel="article">
+            <h2>Article Content</h2>
+            <div class="authoring-article-preview-shell">
+              <div class="authoring-article-preview-media" data-article-image-preview {% if object and object.article_image %}data-existing-image="{{ object.article_image.url }}"{% endif %}>
+                <span class="muted">Article image preview will appear here.</span>
+              </div>
+              <div class="authoring-article-preview-copy">
+                <span class="badge">Learner Layout</span>
+                <strong>Top image first, article next</strong>
+                <p class="muted">This preview mirrors the learner page layout: visual banner at the top, article body under it, then comments for doubts.</p>
+              </div>
+            </div>
+            <div class="authoring-form-grid">
+              <div class="authoring-field authoring-field-full">
+                <label for="{{ form.article_image.id_for_label }}">Article Cover Image</label>
+                <div class="authoring-file-field">
+                  {{ form.article_image }}
+                </div>
+                {{ form.article_image.errors }}
+              </div>
+              <div class="authoring-field authoring-field-full">
+                <label for="{{ form.content.id_for_label }}">Article Content</label>
+                <div class="authoring-rich-toolbar" data-rich-toolbar data-target="{{ form.content.id_for_label }}">
+                  <button class="button button-secondary" type="button" data-rich-action="bold" title="Bold (Ctrl+B)">Bold</button>
+                  <button class="button button-secondary" type="button" data-rich-action="italic" title="Italic (Ctrl+I)">Italic</button>
+                  <button class="button button-secondary" type="button" data-rich-action="underline" title="Underline (Ctrl+U)">Underline</button>
+                  <button class="button button-secondary" type="button" data-rich-action="bullet" title="Bullet List (Alt+Shift+7)">Bullets</button>
+                  <button class="button button-secondary" type="button" data-rich-action="number" title="Numbered List (Alt+Shift+8)">Numbering</button>
+                  <button class="button button-secondary" type="button" data-rich-action="heading" title="Heading (Ctrl+Alt+H)">Heading</button>
+                  <button class="button button-secondary" type="button" data-rich-action="table" title="Insert Table (Ctrl+Alt+T)">Table</button>
+                  <button class="button button-secondary" type="button" data-rich-action="edit-table" title="Edit Existing Table">Edit Table</button>
+                </div>
+                {{ form.content }}
+                <small class="muted">Use the toolbar or keyboard shortcuts to format lesson content for learners.</small>
+                {{ form.content.errors }}
+                <div class="authoring-live-preview">
+                  <div class="panel-header">
+                    <div>
+                      <strong>Live Preview</strong>
+                      <p class="muted">This shows how the lesson article will look on the website.</p>
+                    </div>
+                  </div>
+                  <div class="lesson-article-body" data-rich-preview>
+                    <p class="muted">Start typing article content to preview it here.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="authoring-tip-banner">
+              <strong>Article layout:</strong> cover image at the top, then the article body, then comments and replies for doubts.
+            </div>
+          </section>
+
+          <section class="lesson-panel" data-lesson-panel="video">
+            <h2>Video Content</h2>
+            <div class="authoring-form-grid">
+              <div class="authoring-field">
+                <label for="{{ form.external_url.id_for_label }}">YouTube Video URL</label>
+                {{ form.external_url }}
+                {{ form.external_url.errors }}
+              </div>
+              <div class="authoring-field">
+                <label for="{{ form.media_file.id_for_label }}">Upload Video File</label>
+                {{ form.media_file }}
+                {{ form.media_file.errors }}
+              </div>
+              <div class="authoring-field">
+                <label for="{{ form.subtitle_file.id_for_label }}">Subtitle File</label>
+                {{ form.subtitle_file }}
+                {{ form.subtitle_file.errors }}
+              </div>
+              <div class="authoring-field authoring-field-full">
+                <label for="{{ form.transcript.id_for_label }}">Transcript</label>
+                {{ form.transcript }}
+                {{ form.transcript.errors }}
+              </div>
+            </div>
+            <div class="authoring-tip-banner">
+              <strong>Tracked video:</strong> upload a local file if you want in-LMS playback, transcript support, and anti-skip tracking.
+            </div>
+          </section>
+
+          <section class="lesson-panel" data-lesson-panel="pdf,link">
+            <h2>PDF / External Material</h2>
+            <div class="authoring-form-grid">
+              <div class="authoring-field">
+                <label for="{{ form.media_file.id_for_label }}">Upload PDF File</label>
+                {{ form.media_file }}
+                {{ form.media_file.errors }}
+              </div>
+              <div class="authoring-field">
+                <label for="{{ form.external_url.id_for_label }}">PDF Or Material Link</label>
+                {{ form.external_url }}
+                {{ form.external_url.errors }}
+              </div>
+              <div class="authoring-field authoring-field-full">
+                <strong>Recommended use</strong>
+                <p class="muted">Use the summary to tell learners why this book, document, or material matters before they open it.</p>
+              </div>
+            </div>
+            <div class="authoring-tip-banner">
+              <strong>Recommended use:</strong> books, PDF handbooks, study material, policy documents, reference sheets, and outside reading links.
+            </div>
+          </section>
+
+          <section class="lesson-panel" data-lesson-panel="article,pdf,link,video">
+            <h2>Lesson Rules</h2>
+            <div class="authoring-form-grid">
+              <div class="authoring-field">
+                <label for="{{ form.is_mandatory.id_for_label }}">Mandatory</label>
+                {{ form.is_mandatory }}
+                {{ form.is_mandatory.errors }}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="action-row authoring-submit-row">
+          <button class="button" type="submit" data-loading-button>{% if object %}Save Lesson{% else %}Create Lesson{% endif %}</button>
+        </div>
+      </form>
+
+      {% if form.errors %}
+      <div class="authoring-table-modal" data-lesson-error-modal>
+        <div class="authoring-table-modal-card">
+          <div class="panel-header">
+            <div>
+              <strong>Lesson Upload Error</strong>
+              <p class="muted">Check the file type, lesson name, and upload fields below before saving again.</p>
+            </div>
+            <button class="button button-secondary" type="button" data-lesson-error-close>Close</button>
+          </div>
+          <div class="form-error-stack">
+            {{ form.non_field_errors }}
+            {% for field in form %}
+              {% if field.errors %}
+              <div>
+                <strong>{{ field.label }}</strong>
+                {{ field.errors }}
+              </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="authoring-table-modal" data-table-modal hidden>
+        <div class="authoring-table-modal-card">
+          <div class="panel-header">
+            <div>
+              <strong>Insert Table</strong>
+              <p class="muted">Choose the table size, fill the cells, then insert it into the lesson.</p>
+            </div>
+            <button class="button button-secondary" type="button" data-table-close>Close</button>
+          </div>
+          <div class="authoring-form-grid">
+            <div class="authoring-field">
+              <label for="table-rows">Rows</label>
+              <input id="table-rows" type="number" min="1" max="8" value="2" data-table-rows>
+            </div>
+            <div class="authoring-field">
+              <label for="table-cols">Columns</label>
+              <input id="table-cols" type="number" min="1" max="6" value="2" data-table-cols>
+            </div>
+            <div class="authoring-field">
+              <label for="table-header-bg">Header Fill</label>
+              <input id="table-header-bg" type="color" value="#ffffff" data-table-header-bg>
+            </div>
+            <div class="authoring-field">
+              <label for="table-header-text">Header Text</label>
+              <input id="table-header-text" type="color" value="#0f172a" data-table-header-text>
+            </div>
+            <div class="authoring-field">
+              <label for="table-total-bg">Total Row Fill</label>
+              <input id="table-total-bg" type="color" value="#f3f6fb" data-table-total-bg>
+            </div>
+            <div class="authoring-field">
+              <label for="table-total-text">Total Row Text</label>
+              <input id="table-total-text" type="color" value="#0f172a" data-table-total-text>
+            </div>
+          </div>
+          <div class="authoring-field">
+            <label for="table-paste">Paste From Excel / Sheets</label>
+            <textarea id="table-paste" rows="4" placeholder="Paste rows and columns here from Excel, Google Sheets, or any table" data-table-paste></textarea>
+            <small class="muted">Tip: paste Excel or Sheets cells here. You can also type text like `Rs 6,60,000`, `12%`, `**bold**`, or `__underline__` inside table cells.</small>
+          </div>
+          <div class="authoring-table-grid-wrap">
+            <div class="authoring-table-grid" data-table-grid></div>
+          </div>
+          <div class="action-row">
+            <button class="button button-secondary" type="button" data-table-build>Refresh Grid</button>
+            <button class="button button-secondary" type="button" data-table-clear>Clear All</button>
+            <button class="button button-secondary" type="button" data-table-add-row>Add Row</button>
+            <button class="button button-secondary" type="button" data-table-add-col>Add Column</button>
+            <button class="button button-secondary" type="button" data-table-remove-row>Remove Row</button>
+            <button class="button button-secondary" type="button" data-table-remove-col>Remove Column</button>
+            <button class="button button-secondary" type="button" data-table-apply-paste>Paste Excel</button>
+            <button class="button" type="button" data-table-insert>Save Table</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel authoring-guide-card">
+      <h2>Lesson Design Tips</h2>
+      <div class="authoring-guide-list">
+        <article class="authoring-guide-step">
+          <strong>Video first</strong>
+          <span class="muted">Great for walkthroughs, demos, and onboarding lessons with subtitle support.</span>
+        </article>
+        <article class="authoring-guide-step">
+          <strong>Article first</strong>
+          <span class="muted">Use an image header and then article content when the learner needs to read before moving on.</span>
+        </article>
+        <article class="authoring-guide-step">
+          <strong>PDF / material links</strong>
+          <span class="muted">Use these for books, resource packs, or handbooks that should open in a separate tab instead of inside the lesson page.</span>
+        </article>
+        <article class="authoring-guide-step">
+          <strong>Keep summaries short</strong>
+          <span class="muted">The builder and learner views both reuse the summary as quick context.</span>
+        </article>
+      </div>
+      <section class="authoring-side-callout">
+        <span class="badge">Best Article Pattern</span>
+        <strong>Use the image as a visual header.</strong>
+        <p class="muted">When HR uploads an article image, learners will see it at the top of the lesson before the written explanation starts.</p>
+      </section>
+    </aside>
+  </section>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/authoring.js' %}?v=20260402b"></script>
+<script>
+  (() => {
+    const errorModal = document.querySelector("[data-lesson-error-modal]");
+    const closeButton = document.querySelector("[data-lesson-error-close]");
+    if (!errorModal || !closeButton) return;
+    closeButton.addEventListener("click", () => {
+      errorModal.hidden = true;
+    });
+  })();
+</script>
+{% endblock %}

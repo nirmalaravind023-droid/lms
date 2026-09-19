@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Section Management{% endblock %}
+
+{% block content %}
+<section class="authoring-shell">
+  <section class="panel authoring-hero authoring-hero-studio">
+    <div class="authoring-hero-copy">
+      <span class="badge">HR Section Studio</span>
+      <div>
+        <h1>Section Management</h1>
+        <p class="muted">Create department-based learning sections, rearrange modules, and jump back into the builder from one clean screen.</p>
+      </div>
+      <form method="get" class="authoring-search-row">
+        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search by section title or description">
+        {% if selected_department %}<input type="hidden" name="department" value="{{ selected_department }}">{% endif %}
+        <button class="button button-secondary" type="submit">Search</button>
+      </form>
+    </div>
+    <div class="authoring-hero-meta">
+      <article class="authoring-stat-card">
+        <span class="badge">Total Sections</span>
+        <strong>{{ courses_page.paginator.count }}</strong>
+        <p class="muted">Live section shells available for HR and manager authoring.</p>
+      </article>
+      <article class="authoring-stat-card">
+        <span class="badge">Start Here</span>
+        <strong>Create section -> add modules -> add lessons</strong>
+        <p class="muted">After creating the section, the builder becomes the place where the whole learning flow is arranged.</p>
+      </article>
+      <div class="action-row">
+        <a class="button" href="{% url 'course-create' %}">Add Section</a>
+      </div>
+    </div>
+  </section>
+
+  {% if departments %}
+  <div class="calendar-filter-rail calendar-filter-rail-modern">
+    <a class="button button-secondary{% if not selected_department %} calendar-filter-active{% endif %}" href="{% url 'course-manage-list' %}{% if request.GET.q %}?q={{ request.GET.q|urlencode }}{% endif %}">All Teams</a>
+    {% for department in departments %}
+    <a class="button button-secondary{% if selected_department == department.id|stringformat:'s' %} calendar-filter-active{% endif %}" href="{% url 'course-manage-list' %}?department={{ department.id }}{% if request.GET.q %}&q={{ request.GET.q|urlencode }}{% endif %}" style="border-color: {{ department.color }}; color: {{ department.color }};">
+      {{ department.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <section class="authoring-grid authoring-grid-wide">
+    <section class="authoring-main-stack">
+      <section class="authoring-course-grid">
+        {% for course in courses %}
+        <article class="panel authoring-course-card">
+          <div class="authoring-course-card-top">
+            <div class="authoring-course-card-copy">
+              <div class="action-row">
+                <span class="badge">{{ course.department|default:"General Team" }}</span>
+                <span class="badge">{{ course.get_status_display }}</span>
+              </div>
+              <h2>{{ course.title }}</h2>
+              <p class="muted">{{ course.description|default:"No description yet. Use the editor to explain what this course teaches."|truncatechars:180 }}</p>
+            </div>
+            <a class="button button-secondary" href="{% url 'course-builder' course.slug %}">Open Builder</a>
+          </div>
+          <div class="authoring-course-card-stats">
+            <div>
+              <span class="muted">Modules</span>
+              <strong>{{ course.modules.count }}</strong>
+            </div>
+            <div>
+              <span class="muted">Certificate</span>
+              <strong>{% if course.certificate_enabled %}On{% else %}Off{% endif %}</strong>
+            </div>
+            <div>
+              <span class="muted">Audience</span>
+              <strong>{{ course.department|default:"All" }}</strong>
+            </div>
+          </div>
+          <div class="action-row">
+            <a class="button button-secondary" href="{% url 'course-detail' course.slug %}">Preview</a>
+            <a class="button button-secondary" href="{% url 'course-edit' course.slug %}">Edit</a>
+            <a class="button button-danger" href="{% url 'course-delete' course.slug %}">Delete</a>
+          </div>
+        </article>
+        {% empty %}
+        <article class="panel authoring-course-card authoring-empty-state-modern">
+          <span class="badge">No Sections Yet</span>
+          <h2>Build the first department learning flow</h2>
+          <p class="muted">Create the section shell first, then move into the builder to add modules, lessons, videos, and article steps.</p>
+          <div class="action-row">
+            <a class="button" href="{% url 'course-create' %}">Create First Section</a>
+          </div>
+        </article>
+        {% endfor %}
+      </section>
+      {% include "includes/pagination.html" with page_obj=courses_page page_numbers=courses_page_numbers pagination_query=courses_pagination_query page_param=courses_page_param page_label="Sections pagination" %}
+    </section>
+
+    <aside class="panel authoring-guide-card">
+      <h2>Recommended HR Flow</h2>
+      <div class="authoring-guide-list">
+        <article class="authoring-guide-step">
+          <strong>1. Choose the department</strong>
+          <span class="muted">The department decides which learners automatically receive and see the course.</span>
+        </article>
+        <article class="authoring-guide-step">
+          <strong>2. Add section shell</strong>
+          <span class="muted">Set title, description, and publish state so the structure is ready before content.</span>
+        </article>
+        <article class="authoring-guide-step">
+          <strong>3. Build module flow</strong>
+          <span class="muted">Arrange onboarding, concepts, articles, videos, and quiz checkpoints in the right order.</span>
+        </article>
+      </div>
+    </aside>
+  </section>
+</section>
+{% endblock %}

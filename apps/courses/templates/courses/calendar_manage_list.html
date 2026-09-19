@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar Tasks{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h1>Calendar Tasks</h1>
+      <p class="muted">Admin can create, modify, assign, and delete quiz, assignment, module, and meeting tasks.</p>
+    </div>
+    <a class="button" href="{% url 'calendar-event-create' %}">Add Task</a>
+  </div>
+
+  <div class="card compact-card react-calendar-empty-state">
+    <span class="badge">Task Assignment Management</span>
+    <p class="muted">Each calendar task is assigned to a department. Use the department filter or open a task to edit its assignment, timing, and linked course.</p>
+  </div>
+
+  {% if departments %}
+  <div class="calendar-filter-rail">
+    <a class="button button-secondary {% if not selected_department %}calendar-filter-active{% endif %}" href="{% url 'calendar-manage-list' %}">All Teams</a>
+    {% for department in departments %}
+    <a
+      class="button button-secondary {% if selected_department == department.id|stringformat:'s' %}calendar-filter-active{% endif %}"
+      href="{% url 'calendar-manage-list' %}?department={{ department.id }}"
+      style="border-color: {{ department.color }};"
+    >
+      {{ department.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+          <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Course</th>
+            <th>Assigned To</th>
+            <th>Start</th>
+            <th>Actions</th>
+          </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td>{{ event.title }}</td>
+          <td>{{ event.get_event_type_display }}</td>
+          <td>{{ event.course|default:"-" }}</td>
+          <td>
+            {% if event.department %}
+            <span class="badge" style="background: {{ event.department.color }}22; color: {{ event.department.color }};">{{ event.department }}</span>
+            {% else %}
+            -
+            {% endif %}
+          </td>
+          <td>{{ event.start_at }}</td>
+          <td class="action-row">
+            <a class="button button-secondary" href="{% url 'calendar-event-edit' event.id %}">Edit</a>
+            <a class="button button-danger" href="{% url 'calendar-event-delete' event.id %}">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6">No tasks created yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pagination.html" with page_obj=events_page page_numbers=events_page_numbers pagination_query=events_pagination_query page_param=events_page_param page_label="Calendar tasks pagination" %}
+</section>
+{% endblock %}

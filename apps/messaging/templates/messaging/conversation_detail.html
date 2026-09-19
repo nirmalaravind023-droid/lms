@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Conversation{% endblock %}
+
+{% block content %}
+<section class="message-layout">
+  <aside class="message-sidebar panel">
+    <div class="panel-header">
+      <div>
+        <h1>Messages</h1>
+        <p class="muted">Your conversations</p>
+      </div>
+      <a class="button" href="{% url 'conversation-create' %}">+</a>
+    </div>
+    <div class="message-thread-list">
+      {% for item in conversation_list %}
+      <a href="{% url 'conversation-detail' item.id %}" class="thread-card {% if item.id == conversation.id %}thread-card-active{% endif %}">
+        <div class="panel-header">
+          <strong>{{ item.title|default:"Direct Conversation" }}</strong>
+          {% if item.has_unread and item.id != conversation.id %}
+          <span class="badge">New</span>
+          {% endif %}
+        </div>
+        <p class="muted">{{ item.messages.count }} messages</p>
+      </a>
+      {% empty %}
+      <p class="muted">No conversations yet.</p>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <section class="panel">
+    <div class="panel-header">
+      <div>
+        <h1>Chat</h1>
+        <p class="muted">{{ conversation.title|default:"Conversation" }}</p>
+      </div>
+      <div class="action-row">
+        {% for participant in conversation.participants.all %}
+          {% if participant.user != request.user %}
+          <a class="button button-secondary" href="mailto:{{ participant.user.email }}">{{ participant.user.email }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="chat-window" class="chat-window">
+      {% for message in conversation.messages.all %}
+      <article class="chat-message">
+        <strong>{{ message.sender.get_full_name|default:message.sender.email }}</strong>
+        <p>{{ message.body }}</p>
+        <small>{{ message.created_at }}</small>
+      </article>
+      {% endfor %}
+    </div>
+
+    <form id="chat-form" class="chat-form">
+      <input id="chat-input" type="text" placeholder="Type a message...">
+      <button class="button" type="submit">Send</button>
+    </form>
+  </section>
+</section>
+
+<script>
+  window.LMSChat = {
+    conversationId: "{{ conversation.id }}",
+    wsScheme: window.location.protocol === "https:" ? "wss" : "ws"
+  };
+</script>
+<script src="{% static 'js/chat.js' %}"></script>
+{% endblock %}

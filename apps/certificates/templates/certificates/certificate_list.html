@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Certificates{% endblock %}
+
+{% block content %}
+<section class="panel">
+  {% if request.user.is_admin_like %}
+  <div class="panel-header">
+    <h1>Certificates</h1>
+    <p class="muted">Issued, revoked, and downloadable completion records.</p>
+  </div>
+  {% else %}
+  <div class="certificate-section-head">
+    <h1>Certificates</h1>
+  </div>
+  {% endif %}
+  {% if departments %}
+  <div class="calendar-filter-rail calendar-filter-rail-modern">
+    <a class="button button-secondary{% if not selected_department %} calendar-filter-active{% endif %}" href="{% url 'certificate-list' %}">All Departments</a>
+    {% for department in departments %}
+    <a class="button button-secondary{% if selected_department == department.id|stringformat:'s' %} calendar-filter-active{% endif %}" href="{% url 'certificate-list' %}?department={{ department.id }}" style="border-color: {{ department.color }}; color: {{ department.color }};">
+      {{ department.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Certificate #</th>
+          <th>Course</th>
+          <th>Module</th>
+          {% if request.user.is_admin_like %}<th>Learner</th>{% endif %}
+          <th>Status</th>
+          <th>Issued</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for certificate in certificates %}
+        <tr>
+          <td>{{ certificate.certificate_number }}</td>
+          <td>{{ certificate.course }}</td>
+          <td>{% if certificate.module %}{{ certificate.module.title }}{% else %}Full Course{% endif %}</td>
+          {% if request.user.is_admin_like %}<td>{{ certificate.learner }}</td>{% endif %}
+          <td>{{ certificate.get_status_display }}</td>
+          <td>{{ certificate.issued_at }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="{% if request.user.is_admin_like %}6{% else %}5{% endif %}">No certificates found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  {% if request.user.is_admin_like %}
+  <div class="panel-header">
+    <div>
+      <h2>Quiz Badges</h2>
+      <p class="muted">Each passed quiz/test earns a badge with marks and result details.</p>
+    </div>
+  </div>
+  {% else %}
+  <div class="certificate-section-head certificate-section-head-compact">
+    <h2>Quiz Badges</h2>
+  </div>
+  {% endif %}
+  {% if quiz_badges %}
+  <div class="certificate-badge-list">
+    {% for badge in quiz_badges %}
+    <article class="certificate-badge-item">
+      <div class="certificate-badge-main">
+        <h3>{{ badge.quiz.title }}</h3>
+        <p class="muted">
+          {% if badge.course %}{{ badge.course.title }}{% else %}No linked course{% endif %}
+        </p>
+      </div>
+      <div class="certificate-badge-meta">
+        {% if request.user.is_admin_like %}
+        <div class="certificate-badge-stat">
+          <span class="muted">Learner</span>
+          <strong>{{ badge.learner }}</strong>
+        </div>
+        {% endif %}
+        <div class="certificate-badge-stat">
+          <span class="muted">Marks</span>
+          <strong>{{ badge.marks_label }}</strong>
+        </div>
+        <div class="certificate-badge-stat">
+          <span class="muted">Result</span>
+          <strong>{{ badge.percentage_label }}</strong>
+        </div>
+      </div>
+      <div class="action-row certificate-badge-actions">
+        <a class="button button-secondary" href="{% url 'quiz-result' badge.attempt.id %}">View Result</a>
+        <a class="button button-secondary" href="{% url 'quiz-detail' badge.quiz.id %}">Open Quiz</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">No quiz badges earned yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

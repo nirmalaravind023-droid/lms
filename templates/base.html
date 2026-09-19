@@ -1,0 +1,229 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <title>{% block title %}LMS{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%232563eb'/%3E%3Ctext x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='30' fill='white'%3EL%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20260403f">
+    <link rel="stylesheet" href="{% static 'css/shell.css' %}?v=20260403b">
+    {% if request.resolver_match.url_name == 'dashboard-home' or request.resolver_match.url_name == 'analytics-dashboard' %}
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=20260403b">
+    {% endif %}
+    {% if request.resolver_match.url_name == 'course-list' or request.resolver_match.url_name == 'course-detail' or request.resolver_match.url_name == 'lesson-detail' or request.resolver_match.url_name == 'course-complete' or request.resolver_match.url_name == 'notification-list' or request.resolver_match.url_name == 'calendar-board' or request.resolver_match.url_name == 'calendar-manage-list' or request.resolver_match.url_name == 'calendar-event-create' or request.resolver_match.url_name == 'calendar-event-edit' or request.resolver_match.url_name == 'calendar-event-delete' %}
+    <link rel="stylesheet" href="{% static 'css/courses.css' %}?v=20260403b">
+    {% endif %}
+    {% if request.resolver_match.url_name == 'course-manage-list' or request.resolver_match.url_name == 'course-create' or request.resolver_match.url_name == 'course-edit' or request.resolver_match.url_name == 'course-delete' or request.resolver_match.url_name == 'module-create' or request.resolver_match.url_name == 'module-edit' or request.resolver_match.url_name == 'module-delete' or request.resolver_match.url_name == 'lesson-create' or request.resolver_match.url_name == 'lesson-edit' or request.resolver_match.url_name == 'lesson-delete' or request.resolver_match.url_name == 'course-builder' or request.resolver_match.url_name == 'quiz-create' or request.resolver_match.url_name == 'quiz-update' or request.resolver_match.url_name == 'quiz-assignment-create' %}
+    <link rel="stylesheet" href="{% static 'css/authoring.css' %}?v=20260403b">
+    {% endif %}
+  </head>
+  <body>
+    {% if request.user.is_authenticated %}
+    <div class="app-shell">
+      <aside class="sidebar shell-sidebar">
+        <div class="brand">
+          <span class="brand-kicker">Enterprise Learning</span>
+          <strong>LMS Portal</strong>
+          <span>Learning Workspace</span>
+        </div>
+        <nav class="sidebar-nav">
+          <a class="nav-link{% if request.resolver_match.url_name == 'dashboard-home' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'dashboard-home' %} aria-current="page"{% endif %} href="{% url 'dashboard-home' %}">
+            <span class="nav-link-icon">D</span>
+            <span class="nav-link-copy">
+              <span class="nav-link-label">Dashboard</span>
+              <small>Overview</small>
+            </span>
+          </a>
+          <a class="nav-link{% if request.resolver_match.url_name == 'calendar-board' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'calendar-board' %} aria-current="page"{% endif %} href="{% url 'calendar-board' %}">
+            <span class="nav-link-icon">C</span>
+            <span class="nav-link-copy">
+              <span class="nav-link-label">Calendar</span>
+              <small>Schedule</small>
+            </span>
+          </a>
+          <a class="nav-link{% if request.resolver_match.url_name == 'course-list' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'course-list' %} aria-current="page"{% endif %} href="{% url 'course-list' %}">
+            <span class="nav-link-icon">L</span>
+            <span class="nav-link-copy">
+              <span class="nav-link-label">Sections</span>
+              <small>Library</small>
+            </span>
+          </a>
+          {% if request.user.is_admin_like or request.user.is_manager_like %}
+          <a class="nav-link{% if request.resolver_match.url_name == 'course-manage-list' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'course-manage-list' %} aria-current="page"{% endif %} href="{% url 'course-manage-list' %}">
+            <span class="nav-link-icon">M</span>
+            <span class="nav-link-copy">
+              <span class="nav-link-label">Section Management</span>
+              <small>Authoring</small>
+            </span>
+          </a>
+          {% endif %}
+          {% if request.user.is_admin_like or request.user.is_manager_like %}
+          <a class="nav-link{% if request.resolver_match.url_name == 'calendar-manage-list' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'calendar-manage-list' %} aria-current="page"{% endif %} href="{% url 'calendar-manage-list' %}">
+            <span class="nav-link-icon">T</span>
+            <span class="nav-link-copy">
+              <span class="nav-link-label">Calendar Tasks</span>
+              <small>Operations</small>
+            </span>
+          </a>
+          {% endif %}
+          <a class="nav-link{% if request.resolver_match.url_name == 'quiz-list' or request.resolver_match.url_name == 'quiz-detail' or request.resolver_match.url_name == 'quiz-result' or request.resolver_match.url_name == 'quiz-attempt-review' or request.resolver_match.url_name == 'quiz-create' or request.resolver_match.url_name == 'quiz-update' or request.resolver_match.url_name == 'quiz-assignment-create' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'quiz-list' or request.resolver_match.url_name == 'quiz-detail' or request.resolver_match.url_name == 'quiz-result' or request.resolver_match.url_name == 'quiz-attempt-review' or request.resolver_match.url_name == 'quiz-create' or request.resolver_match.url_name == 'quiz-update' or request.resolver_match.url_name == 'quiz-assignment-create' %} aria-current="page"{% endif %} href="{% url 'quiz-list' %}">
+            <span class="nav-link-icon">Q</span>
+            <span class="nav-link-copy">
+              <span class="nav-link-label">Assessments</span>
+              <small>Testing</small>
+            </span>
+          </a>
+          <a class="nav-link{% if request.resolver_match.url_name == 'certificate-list' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'certificate-list' %} aria-current="page"{% endif %} href="{% url 'certificate-list' %}">
+            <span class="nav-link-icon">R</span>
+            <span class="nav-link-copy">
+              <span class="nav-link-label">Certificates</span>
+              <small>Recognition</small>
+            </span>
+          </a>
+          <a class="nav-link{% if request.resolver_match.url_name == 'conversation-list' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'conversation-list' %} aria-current="page"{% endif %} href="{% url 'conversation-list' %}">
+            <span class="nav-link-icon">I</span>
+            <span class="nav-link-copy">
+              <span class="nav-link-label">Messages</span>
+              <small>{% if unread_message_conversations %}{{ unread_message_conversations }} unread{% else %}Inbox{% endif %}</small>
+            </span>
+          </a>
+          <a class="nav-link{% if request.resolver_match.url_name == 'analytics-dashboard' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'analytics-dashboard' %} aria-current="page"{% endif %} href="{% url 'analytics-dashboard' %}">
+            <span class="nav-link-icon">A</span>
+            <span class="nav-link-copy">
+              <span class="nav-link-label">Analytics</span>
+              <small>Insights</small>
+            </span>
+          </a>
+          <a class="nav-link{% if request.resolver_match.url_name == 'user-directory' or request.resolver_match.url_name == 'user-detail' %} nav-link-active{% endif %}"{% if request.resolver_match.url_name == 'user-directory' or request.resolver_match.url_name == 'user-detail' %} aria-current="page"{% endif %} href="{% url 'user-directory' %}">
+            <span class="nav-link-icon">U</span>
+            <span class="nav-link-copy">
+              <span class="nav-link-label">People</span>
+              <small>Management</small>
+            </span>
+          </a>
+        </nav>
+        <section class="sidebar-spotlight">
+          <span class="badge">Focus Today</span>
+          <strong>{{ sidebar_quote.text }}</strong>
+          <small>{{ sidebar_quote.author }}</small>
+        </section>
+        <section class="sidebar-user-panel">
+          <div class="sidebar-user-copy sidebar-user-copy-compact">
+            <div class="sidebar-user-meta">
+              <strong>{{ request.user.get_role_display }}</strong>
+              {% if request.user.department %}
+              <small>{{ request.user.department.name }}</small>
+              {% endif %}
+            </div>
+            {% if request.user.employee_code %}
+            <small>User ID: {{ request.user.employee_code }}</small>
+            {% endif %}
+          </div>
+        </section>
+      </aside>
+      <main class="content shell-content">
+        <section class="shell-topbar">
+          <div class="shell-search" data-global-search data-search-endpoint="{% url 'global-search-api' %}">
+            <span class="shell-search-icon">S</span>
+            <input type="search" placeholder="Search courses, learners, analytics, messages" data-search-input autocomplete="off">
+            <div class="shell-search-results" data-search-results hidden>
+              <div class="shell-search-results-header">
+                <strong>Search</strong>
+                <small data-search-source></small>
+              </div>
+              <div class="shell-search-results-body" data-search-body></div>
+            </div>
+          </div>
+          <div class="shell-topbar-actions">
+            <button class="shell-utility-button theme-toggle" type="button" data-theme-toggle aria-label="Toggle theme">
+              <span class="theme-toggle-icon" aria-hidden="true" data-theme-icon>&#9728;</span>
+              <span data-theme-label>Light Mode</span>
+            </button>
+            <a class="shell-icon-button" href="{% url 'notification-list' %}" aria-label="Notifications">
+              <span class="shell-icon-button-symbol" aria-hidden="true">&#128276;</span>
+              {% if unread_course_notifications %}
+              <span class="shell-icon-count">{{ unread_course_notifications }}</span>
+              {% endif %}
+            </a>
+            <a class="shell-icon-button" href="{% url 'conversation-list' %}" aria-label="Messages">
+              <span class="shell-icon-button-symbol" aria-hidden="true">&#9993;</span>
+              {% if unread_message_conversations %}
+              <span class="shell-icon-count">{{ unread_message_conversations }}</span>
+              {% endif %}
+            </a>
+            <div class="shell-profile">
+              <small>Learning Workspace</small>
+              <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+              <span class="shell-profile-meta">
+                {{ request.user.get_role_display }}
+                {% if request.user.department %} | {{ request.user.department.name }}{% endif %}
+              </span>
+            </div>
+            <form method="post" action="{% url 'logout' %}" class="shell-topbar-form">
+              {% csrf_token %}
+              <button class="shell-utility-button shell-logout-button" type="submit">Logout</button>
+            </form>
+          </div>
+        </section>
+        {% if messages %}
+          <div class="flash-stack">
+            {% for message in messages %}
+            <div class="flash{% if message.tags %} flash-{{ message.tags|slugify }}{% endif %}" data-flash-level="{{ message.tags|default:'info' }}"{% if "popup" in message.tags %} data-flash-popup="true"{% endif %}>{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+    {% else %}
+    <main class="content">
+      {% if messages %}
+        <div class="flash-stack">
+          {% for message in messages %}
+          <div class="flash{% if message.tags %} flash-{{ message.tags|slugify }}{% endif %}" data-flash-level="{{ message.tags|default:'info' }}"{% if "popup" in message.tags %} data-flash-popup="true"{% endif %}>{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% block anonymous_content %}
+      <section class="auth-card">
+        <h1>LMS Portal</h1>
+        <p class="muted">Your session has ended. Sign in again to continue.</p>
+        <a class="button" href="{% url 'login' %}">Go To Login</a>
+      </section>
+      {% endblock %}
+    </main>
+    {% endif %}
+    <div class="page-loading-overlay" data-page-loading-overlay hidden>
+      <div class="page-loading-card" role="status" aria-live="polite">
+        <div class="page-loading-spinner" aria-hidden="true"></div>
+        <strong>Loading...</strong>
+        <p class="muted">Please wait while the LMS finishes this action.</p>
+      </div>
+    </div>
+    <div class="global-error-modal" data-global-error-modal hidden>
+      <div class="global-error-modal-card" role="alertdialog" aria-live="assertive" aria-modal="true">
+        <div class="panel-header">
+          <div>
+            <span class="badge" data-global-error-badge>Error</span>
+            <strong data-global-error-title>Something needs attention</strong>
+          </div>
+          <button class="button button-secondary" type="button" data-global-error-close>Close</button>
+        </div>
+        <div class="stack" data-global-error-body></div>
+      </div>
+    </div>
+    <script src="{% static 'js/shell.js' %}?v=20260403a"></script>
+    <script>
+      window.addEventListener("pageshow", function(event) {
+        if (event.persisted) {
+          window.location.reload();
+        }
+      });
+    </script>
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

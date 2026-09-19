@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}New Message{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h1>New Message</h1>
+      <p class="muted">Send to people, a sector, or use To / CC / BCC like email while keeping everything inside the LMS inbox.</p>
+    </div>
+    <a class="button button-secondary" href="{% url 'conversation-list' %}">Back</a>
+  </div>
+
+  <div class="two-column-layout">
+    <section class="panel">
+      <form method="post" class="stack">
+        {% csrf_token %}
+        {{ form.recipients }}
+        <div>
+          <label for="{{ form.to_lookup.id_for_label }}">{{ form.to_lookup.label }}</label>
+          {{ form.to_lookup }}
+          <datalist id="contact-suggestions">
+            {% for user in form.fields.recipients.queryset %}
+            <option value="@{{ user.username }}">{{ user.get_full_name|default:user.email }} | {{ user.email }}</option>
+            {% endfor %}
+          </datalist>
+          <p class="muted">{{ form.to_lookup.help_text }}</p>
+          {% if form.to_lookup.errors %}
+          <div class="flash-stack">
+            {% for error in form.to_lookup.errors %}
+            <div class="flash">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <div>
+          <label for="{{ form.cc_lookup.id_for_label }}">{{ form.cc_lookup.label }}</label>
+          {{ form.cc_lookup }}
+          <p class="muted">{{ form.cc_lookup.help_text }}</p>
+        </div>
+        <div>
+          <label for="{{ form.bcc_lookup.id_for_label }}">{{ form.bcc_lookup.label }}</label>
+          {{ form.bcc_lookup }}
+          <p class="muted">{{ form.bcc_lookup.help_text }}</p>
+        </div>
+        <div>
+          <label for="{{ form.department.id_for_label }}">{{ form.department.label }}</label>
+          {{ form.department }}
+        </div>
+        <div>
+          <label for="{{ form.subject.id_for_label }}">{{ form.subject.label }}</label>
+          {{ form.subject }}
+        </div>
+        <script>
+          (function() {
+            ["{{ form.to_lookup.id_for_label }}", "{{ form.cc_lookup.id_for_label }}", "{{ form.bcc_lookup.id_for_label }}"].forEach(function(id) {
+              var input = document.getElementById(id);
+              if (input) {
+                input.setAttribute("list", "contact-suggestions");
+              }
+            });
+          })();
+        </script>
+        <div>
+          <label for="{{ form.initial_message.id_for_label }}">Message</label>
+          {{ form.initial_message }}
+          {% if form.initial_message.errors %}
+          <div class="flash-stack">
+            {% for error in form.initial_message.errors %}
+            <div class="flash">{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% if form.non_field_errors %}
+        <div class="flash-stack">
+          {% for error in form.non_field_errors %}
+          <div class="flash">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <button class="button" type="submit">Open Conversation</button>
+      </form>
+    </section>
+
+    <section class="panel contact-panel">
+      <div class="panel-header">
+        <h2>Contacts</h2>
+      </div>
+      <div class="stack">
+        {% for contact in form.fields.recipients.queryset %}
+        <article class="contact-card">
+          <div>
+            <strong>@{{ contact.username }}</strong>
+            <p class="muted">{{ contact.get_full_name|default:contact.email }}</p>
+            <p class="muted">{{ contact.department|default:"No Department" }}</p>
+          </div>
+          <div class="action-row">
+            <a class="button button-secondary" href="{% url 'conversation-create' %}?recipient={{ contact.id }}">Chat</a>
+            <a class="button button-secondary" href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</section>
+{% endblock %}

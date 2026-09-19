@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  admin
+  learner
+  hr
+}
+
+enum ContentType {
+  video
+  article
+  pdf
+  reading
+}
+
+enum ProgressStatus {
+  not_started
+  in_progress
+  completed
+}
+
+enum AssessmentType {
+  quiz
+  assignment
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+  courses   Course[]
+}
+
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  passwordHash   String
+  firstName      String?
+  lastName       String?
+  role           Role           @default(learner)
+  status         String         @default("active")
+  companyId      String
+  company        Company        @relation(fields: [companyId], references: [id])
+  departmentId   String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  progress       UserProgress[]
+  quizAttempts   QuizAttempt[]
+  certificates   Certificate[]
+  sentMessages   Message[]      @relation("SentMessages")
+  receivedMessages Message[]    @relation("ReceivedMessages")
+  activityLogs   ActivityLog[]
+  createdCourses Course[]       @relation("CourseCreator")
+  createdAssessments Assessment[] @relation("AssessmentCreator")
+
+  @@index([companyId, email])
+  @@index([role])
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  isPublished Boolean  @default(false)
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  createdById String?
+  creator     User?    @relation("CourseCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  modules     Module[]
+  assessments Assessment[]
+  certificates Certificate[]
+
+  @@index([companyId])
+}
+
+model Module {
+  id          String      @id @default(uuid())
+  courseId    String
+  course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  orderIndex  Int
+  isMandatory Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  submodules  Submodule[]
+  assessments Assessment[]
+
+  @@index([courseId])
+}
+
+model Submodule {
+  id          String         @id @default(uuid())
+  moduleId    String
+  module      Module         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title       String
+  contentType ContentType
+  orderIndex  Int
+  contentUrl  String?
+  isMandatory Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  progress    UserProgress[]
+
+  @@index([moduleId])
+}
+
+model UserProgress {
+  id                String         @id @default(uuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id])
+  submoduleId       String
+  submodule         Submodule      @relation(fields: [submoduleId], references: [id])
+  status            ProgressStatus @default(not_started)
+  watchStartTime    DateTime?
+  watchEndTime      DateTime?
+  totalWatchDuration Int?           // in seconds
+  completedAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([userId, submoduleId])
+  @@index([userId])
+  @@index([completedAt])
+}
+
+model Assessment {
+  id                 String         @id @default(uuid())
+  courseId           String
+  course             Course         @relation(fields: [courseId], references: [id])
+  moduleId           String?
+  module             Module?        @relation(fields: [moduleId], references: [id])
+  title              String
+  type               AssessmentType
+  passingScore       Int            @default(70)
+  timeLimitMinutes   Int?
+  isMandatory        Boolean        @default(false)
+  departmentId       String?
+  createdById        String?
+  creator            User?          @relation("AssessmentCreator", fields: [createdById], references: [id])
+  createdAt          DateTime       @default(now())
+  attempts           QuizAttempt[]
+
+  @@index([courseId])
+}
+
+model QuizAttempt {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+  score        Int?
+  passed       Boolean?
+  startedAt    DateTime?
+  submittedAt  DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@index([userId])
+  @@index([submittedAt])
+}
+
+model Certificate {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  templateId String?
+  issuedAt  DateTime @default(now())
+  pdfUrl    String?
+  isRevoked Boolean  @default(false)
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  content    String
+  isRead     Boolean  @default(false)
+  readAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([receiverId])
+  @@index([senderId, receiverId, createdAt])
+}
+
+model ActivityLog {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  action       String
+  resourceType String?  // 'course', 'module', 'quiz', etc
+  resourceId   String?
+  details      Json?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([resourceType, resourceId])
+}
