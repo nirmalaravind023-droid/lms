@@ -29,12 +29,12 @@ from apps.assessments.models import Quiz
 from apps.common.holidays import get_holiday_calendars, get_india_holiday_map, group_holidays_by_day
 from apps.common.pagination import paginate_items
 from apps.common.services import create_admin_audit_log, create_learning_audit_event, snapshot_model
-from apps.organizations.models import Department
 from apps.certificates.models import Certificate
 from apps.certificates.services import ensure_module_certificates, issue_certificate
 
 from .forms import CalendarEventForm, CourseCommentForm, CourseForm, LessonForm, ModuleForm
 from .models import CalendarEvent, Course, CourseComment, CourseNotification, Enrollment, Lesson, LessonProgress, Module
+from .selectors import manageable_departments_for_user
 from .services import parse_json_request, record_lesson_attention, record_video_playback, reorder_lessons, reorder_modules
 from .video import normalize_subtitle_file
 
@@ -60,17 +60,6 @@ def _broadcast_course_notification(*, course: Course, actor: User | None, messag
             course=course,
             message=message,
         )
-
-
-def manageable_departments_for_user(user: User):
-    if not user.company_id:
-        return Department.objects.none()
-    departments = user.company.departments.order_by("name")
-    if user.is_manager_like or user.is_admin_like:
-        return departments
-    if user.department_id:
-        return departments.filter(id=user.department_id)
-    return Department.objects.none()
 
 
 class CompanyScopedMixin:
