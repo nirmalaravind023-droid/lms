@@ -949,21 +949,26 @@ class CalendarEventDeleteView(CourseAuthorMixin, CompanyScopedMixin, DeleteView)
         return reverse("calendar-manage-list")
 
 
-class ModuleReorderView(CourseAuthorMixin, View):
+class ModuleReorderView(CourseAuthorMixin, CompanyScopedMixin, View):
     def post(self, request):
         try:
             payload = parse_json_request(request.body)
-            reorder_modules(payload)
+            queryset = self.company_queryset(Module.objects.select_related("course"), lookup="course__company")
+            reorder_modules(payload, queryset=queryset)
             return JsonResponse({"ok": True})
         except Exception as exc:
             return JsonResponse({"ok": False, "error": str(exc)}, status=400)
 
 
-class LessonReorderView(CourseAuthorMixin, View):
+class LessonReorderView(CourseAuthorMixin, CompanyScopedMixin, View):
     def post(self, request):
         try:
             payload = parse_json_request(request.body)
-            reorder_lessons(payload)
+            queryset = self.company_queryset(
+                Lesson.objects.select_related("module", "module__course"),
+                lookup="module__course__company",
+            )
+            reorder_lessons(payload, queryset=queryset)
             return JsonResponse({"ok": True})
         except Exception as exc:
             return JsonResponse({"ok": False, "error": str(exc)}, status=400)

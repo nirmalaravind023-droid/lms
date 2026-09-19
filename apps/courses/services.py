@@ -17,17 +17,23 @@ from django.utils import timezone
 from .models import Lesson, LessonProgress, Module, merge_time_ranges
 
 
-def reorder_modules(payload: list[dict]) -> None:
+def reorder_modules(payload: list[dict], *, queryset=None) -> None:
     # Called by the drag-and-drop builder API endpoint.
+    queryset = queryset or Module.objects.all()
     with transaction.atomic():
         for item in payload:
-            Module.objects.filter(pk=item["id"]).update(order=item["order"])
+            updated = queryset.filter(pk=item["id"]).update(order=item["order"])
+            if not updated:
+                raise ValueError("Module is not available for reorder.")
 
 
-def reorder_lessons(payload: list[dict]) -> None:
+def reorder_lessons(payload: list[dict], *, queryset=None) -> None:
+    queryset = queryset or Lesson.objects.all()
     with transaction.atomic():
         for item in payload:
-            Lesson.objects.filter(pk=item["id"]).update(order=item["order"])
+            updated = queryset.filter(pk=item["id"]).update(order=item["order"])
+            if not updated:
+                raise ValueError("Lesson is not available for reorder.")
 
 
 def parse_json_request(body: bytes) -> list[dict]:

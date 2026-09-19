@@ -1,3 +1,5 @@
+import json
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -10,6 +12,75 @@ from apps.courses.video import normalize_subtitle_file
 from apps.courses.models import CalendarEvent, Course, CourseComment, CourseNotification, Enrollment, Lesson, LessonProgress, Module
 from apps.certificates.models import Certificate
 from apps.organizations.models import Company, Department
+
+
+class CourseReorderAuthorizationTests(TestCase):
+    def setUp(self):
+        self.company = Company.objects.create(name="Primary Co", company_code="PRICO")
+        self.department = Department.objects.create(company=self.company, name="Training", code="TRN")
+        self.admin_user = User.objects.create_user(
+            username="primary-admin",
+            email="primary-admin@example.com",
+            password="pass1234",
+            company=self.company,
+            department=self.department,
+            role=User.Role.COMPANY_ADMIN,
+        )
+        self.course = Course.objects.create(
+            company=self.company,
+            title="Primary Course",
+            department=self.department,
+            status=Course.Status.PUBLISHED,
+            created_by=self.admin_user,
+        )
+        self.module = Module.objects.create(course=self.course, title="Allowed Module", order=1)
+        self.lesson = Lesson.objects.create(module=self.module, title="Allowed Lesson", order=1)
+
+        self.other_company = Company.objects.create(name="Other Co", company_code="OTHCO")
+        self.other_department = Department.objects.create(company=self.other_company, name="Other", code="OTH")
+        self.other_admin = User.objects.create_user(
+            username="other-admin",
+            email="other-admin@example.com",
+            password="pass1234",
+            company=self.other_company,
+            department=self.other_department,
+            role=User.Role.COMPANY_ADMIN,
+        )
+        self.other_course = Course.objects.create(
+            company=self.other_company,
+            title="Other Course",
+            department=self.other_department,
+            status=Course.Status.PUBLISHED,
+            created_by=self.other_admin,
+        )
+        self.other_module = Module.objects.create(course=self.other_course, title="Foreign Module", order=7)
+        self.other_lesson = Lesson.objects.create(module=self.other_module, title="Foreign Lesson", order=8)
+
+    def test_module_reorder_rejects_module_from_other_company(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse("module-reorder"),
+            data=json.dumps([{"id": str(self.other_module.id), "order": 1}]),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.other_module.refresh_from_db()
+        self.assertEqual(self.other_module.order, 7)
+
+    def test_lesson_reorder_rejects_lesson_from_other_company(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse("lesson-reorder"),
+            data=json.dumps([{"id": str(self.other_lesson.id), "order": 1}]),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.other_lesson.refresh_from_db()
+        self.assertEqual(self.other_lesson.order, 8)
 
 
 class CalendarHolidayTests(TestCase):
