@@ -15,6 +15,11 @@ class Conversation(TimeStampedModel):
     title = models.CharField(max_length=255, blank=True)
     is_direct = models.BooleanField(default=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["company", "updated_at"], name="msg_conv_company_updated_idx"),
+        ]
+
     def __str__(self) -> str:
         return self.title or f"Conversation {self.id}"
 
@@ -26,6 +31,9 @@ class ConversationParticipant(TimeStampedModel):
 
     class Meta:
         unique_together = ("conversation", "user")
+        indexes = [
+            models.Index(fields=["user", "last_read_at"], name="msg_part_user_read_idx"),
+        ]
 
     def __str__(self) -> str:
         return f"{self.user} in {self.conversation_id}"
@@ -39,6 +47,10 @@ class Message(TimeStampedModel):
 
     class Meta:
         ordering = ("created_at",)
+        indexes = [
+            models.Index(fields=["conversation", "created_at"], name="msg_message_conv_created_idx"),
+            models.Index(fields=["sender", "created_at"], name="msg_message_sender_created_idx"),
+        ]
 
     def __str__(self) -> str:
         return f"{self.sender}: {self.body[:40]}"

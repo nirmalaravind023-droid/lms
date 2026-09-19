@@ -51,6 +51,12 @@ class Quiz(TimeStampedModel):
 
     class Meta:
         ordering = ("title",)
+        indexes = [
+            models.Index(fields=["company", "status"], name="assess_quiz_company_status_idx"),
+            models.Index(fields=["company", "assessment_type", "status"], name="assess_quiz_comp_type_stat_idx"),
+            models.Index(fields=["course", "status"], name="assess_quiz_course_status_idx"),
+            models.Index(fields=["module", "status"], name="assess_quiz_module_status_idx"),
+        ]
 
     def __str__(self) -> str:
         return self.title
@@ -119,6 +125,13 @@ class QuizAssignment(TimeStampedModel):
     )
     due_date = models.DateField(blank=True, null=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["quiz", "department"], name="assess_asg_quiz_dept_idx"),
+            models.Index(fields=["quiz", "learner"], name="assess_asg_quiz_learner_idx"),
+            models.Index(fields=["learner", "due_date"], name="assess_asg_learner_due_idx"),
+        ]
+
     def __str__(self) -> str:
         return f"{self.quiz} assignment"
 
@@ -138,6 +151,13 @@ class QuizAttempt(TimeStampedModel):
     percentage = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     is_passed = models.BooleanField(blank=True, null=True)
     status = models.CharField(max_length=30, choices=Status.choices, default=Status.IN_PROGRESS)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["quiz", "status"], name="assess_attempt_quiz_status_idx"),
+            models.Index(fields=["learner", "status"], name="assess_attempt_learner_status_idx"),
+            models.Index(fields=["learner", "is_passed"], name="assess_attempt_learner_passed_idx"),
+        ]
 
     def __str__(self) -> str:
         return f"{self.learner} - {self.quiz}"

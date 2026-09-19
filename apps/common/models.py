@@ -104,6 +104,11 @@ class LearningAuditEvent(TimeStampedModel):
 
     class Meta:
         ordering = ("-happened_at", "-created_at")
+        indexes = [
+            models.Index(fields=["company", "event_type", "happened_at"], name="learn_audit_comp_type_time_idx"),
+            models.Index(fields=["learner", "happened_at"], name="learn_audit_learner_time_idx"),
+            models.Index(fields=["course", "happened_at"], name="learn_audit_course_time_idx"),
+        ]
 
 
 class AdminAuditLog(TimeStampedModel):
@@ -140,3 +145,8 @@ class AdminAuditLog(TimeStampedModel):
 
     class Meta:
         ordering = ("-performed_at", "-created_at")
+        indexes = [
+            models.Index(fields=["company", "action", "performed_at"], name="admin_audit_comp_action_idx"),
+            models.Index(fields=["actor", "performed_at"], name="admin_audit_actor_time_idx"),
+            models.Index(fields=["entity_type", "entity_id"], name="admin_audit_entity_idx"),
+        ]

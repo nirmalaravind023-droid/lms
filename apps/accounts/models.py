@@ -45,6 +45,10 @@ class User(AbstractUser, TimeStampedModel):
 
     class Meta:
         ordering = ("email",)
+        indexes = [
+            models.Index(fields=["company", "role"], name="acct_user_company_role_idx"),
+            models.Index(fields=["company", "department"], name="acct_user_company_dept_idx"),
+        ]
 
     def __str__(self) -> str:
         return self.get_full_name() or self.email
@@ -117,6 +121,10 @@ class UserLifecycleRequest(TimeStampedModel):
 
     class Meta:
         ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=["status", "action"], name="acct_life_status_action_idx"),
+            models.Index(fields=["target_user", "status"], name="acct_life_target_status_idx"),
+        ]
 
     def __str__(self) -> str:
         return f"{self.target_user} - {self.get_action_display()} ({self.get_status_display()})"

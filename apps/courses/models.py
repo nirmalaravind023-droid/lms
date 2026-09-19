@@ -244,6 +244,10 @@ class Course(TimeStampedModel):
     class Meta:
         ordering = ("title",)
         unique_together = ("company", "slug")
+        indexes = [
+            models.Index(fields=["company", "status"], name="course_company_status_idx"),
+            models.Index(fields=["company", "department", "status"], name="course_comp_dept_status_idx"),
+        ]
 
     def save(self, *args, **kwargs):
         self.slug = build_unique_course_slug(
@@ -375,6 +379,13 @@ class CourseAssignment(TimeStampedModel):
     is_required = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["company", "course", "department"], name="crs_asg_comp_course_dept_idx"),
+            models.Index(fields=["learner", "is_active"], name="crs_asg_learner_active_idx"),
+            models.Index(fields=["course", "is_active"], name="crs_asg_course_active_idx"),
+        ]
+
     def __str__(self) -> str:
         target = self.learner or self.department
         return f"{self.course} -> {target}"
@@ -397,6 +408,10 @@ class Enrollment(TimeStampedModel):
 
     class Meta:
         unique_together = ("learner", "course")
+        indexes = [
+            models.Index(fields=["learner", "status"], name="enroll_learner_status_idx"),
+            models.Index(fields=["course", "status"], name="enroll_course_status_idx"),
+        ]
 
     def __str__(self) -> str:
         return f"{self.learner} - {self.course}"
@@ -432,6 +447,11 @@ class LessonProgress(TimeStampedModel):
 
     class Meta:
         unique_together = ("learner", "lesson")
+        indexes = [
+            models.Index(fields=["learner", "status"], name="prog_learner_status_idx"),
+            models.Index(fields=["lesson", "status"], name="prog_lesson_status_idx"),
+            models.Index(fields=["enrollment", "status"], name="prog_enroll_status_idx"),
+        ]
 
     def __str__(self) -> str:
         return f"{self.learner} - {self.lesson}"
@@ -503,6 +523,11 @@ class CalendarEvent(TimeStampedModel):
 
     class Meta:
         ordering = ("start_at",)
+        indexes = [
+            models.Index(fields=["company", "start_at"], name="event_company_start_idx"),
+            models.Index(fields=["department", "start_at"], name="event_dept_start_idx"),
+            models.Index(fields=["course", "start_at"], name="event_course_start_idx"),
+        ]
 
     def __str__(self) -> str:
         return self.title
@@ -517,6 +542,10 @@ class CourseComment(TimeStampedModel):
 
     class Meta:
         ordering = ("created_at",)
+        indexes = [
+            models.Index(fields=["course", "created_at"], name="comment_course_created_idx"),
+            models.Index(fields=["author", "created_at"], name="comment_author_created_idx"),
+        ]
 
     def __str__(self) -> str:
         return f"{self.author} on {self.course}"
@@ -564,6 +593,10 @@ class CourseNotification(TimeStampedModel):
 
     class Meta:
         ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=["recipient", "is_read", "created_at"], name="notif_rec_read_created_idx"),
+            models.Index(fields=["course", "created_at"], name="notif_course_created_idx"),
+        ]
 
     @property
     def notification_kind(self) -> str:
