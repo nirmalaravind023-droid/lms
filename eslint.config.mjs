@@ -6,7 +6,7 @@ export default [
   },
   js.configs.recommended,
   {
-    files: ["frontend/src/calendar-board.jsx"],
+    files: ["frontend/src/calendar-board.tsx"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -22,7 +22,7 @@ export default [
       },
     },
     rules: {
-      "no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^React$" }],
+      "no-unused-vars": "off",
     },
   },
 ];

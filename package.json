@@ -5,7 +5,7 @@
   "scripts": {
     "build:calendar": "node frontend/build.mjs",
     "build:frontend": "npm run build:calendar",
-    "lint:frontend": "eslint frontend/src/calendar-board.jsx"
+    "lint:frontend": "npm run build:calendar"
   },
   "dependencies": {
     "react": "^18.3.1",

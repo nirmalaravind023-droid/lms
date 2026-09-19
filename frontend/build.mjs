@@ -1,7 +1,7 @@
 import { build } from "esbuild";
 
 await build({
-  entryPoints: ["frontend/src/calendar-board.jsx"],
+  entryPoints: ["frontend/src/calendar-board.tsx"],
   bundle: true,
   format: "iife",
   target: ["es2018"],

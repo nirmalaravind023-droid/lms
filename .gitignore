@@ -17,6 +17,7 @@ node_modules/
 dist/
 build/
 *.log
+*.tsbuildinfo
 .vscode/
 .sixth/
 archived_unused_folders/loose_media_duplicates/

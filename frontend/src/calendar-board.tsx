@@ -1,7 +1,107 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 
-function buildQuery({ month, year, department }) {
+type DepartmentOption = {
+  id: string;
+  name: string;
+  color: string;
+};
+
+type HolidayFilter = {
+  key: string;
+  label: string;
+  color: string;
+  count?: number;
+};
+
+type CalendarSummary = {
+  total_items: number;
+  quiz_items: number;
+  assignment_items: number;
+  task_items: number;
+  holiday_items: number;
+};
+
+type CalendarDetailRow = {
+  label: string;
+  value: string | number;
+  hint: string;
+};
+
+type CalendarEventItem = {
+  kind: "task" | "holiday" | string;
+  id: string;
+  title: string;
+  type_label: string;
+  subtitle: string;
+  color: string;
+  url?: string;
+  open_url?: string;
+  edit_url?: string;
+  department?: string;
+  department_color?: string;
+  section_title?: string;
+  overview_lines?: string[];
+  start_label?: string;
+  start_time_label?: string;
+  end_time_label?: string;
+  meeting_type_label?: string;
+  holiday_calendar_key?: string;
+  holiday_calendar_label?: string;
+};
+
+type CalendarCell = {
+  iso_date: string;
+  day: number;
+  in_month: boolean;
+  is_today: boolean;
+  create_url: string;
+  events: CalendarEventItem[];
+};
+
+type CalendarResponse = {
+  current_month: number;
+  month?: number;
+  year?: number;
+  display_month: string;
+  display_year: number;
+  selected_department: string;
+  departments: DepartmentOption[];
+  holiday_filters: HolidayFilter[];
+  is_learner: boolean;
+  can_manage: boolean;
+  create_task_url: string;
+  previous_month: number;
+  previous_year: number;
+  next_month: number;
+  next_year: number;
+  calendar_summary: CalendarSummary;
+  calendar_detail_rows: CalendarDetailRow[];
+  weeks: CalendarCell[][];
+};
+
+type CalendarUiState = {
+  month: number;
+  year: number;
+  department: string;
+  holidayKeys: string[];
+  showTasks: boolean;
+};
+
+type CalendarAppState = {
+  loading: boolean;
+  error: string;
+  data: CalendarResponse | null;
+  month: number;
+  year: number;
+  department: string;
+};
+
+type TaskColorStyle = React.CSSProperties & {
+  "--task-color": string;
+};
+
+function buildQuery({ month, year, department }: { month: number; year: number; department: string }) {
   const params = new URLSearchParams();
   params.set("month", String(month));
   params.set("year", String(year));
@@ -11,7 +111,15 @@ function buildQuery({ month, year, department }) {
   return params.toString();
 }
 
-function readCalendarUiState({ initialMonth, initialYear, initialDepartment }) {
+function readCalendarUiState({
+  initialMonth,
+  initialYear,
+  initialDepartment,
+}: {
+  initialMonth: string;
+  initialYear: string;
+  initialDepartment: string;
+}): CalendarUiState {
   if (typeof window === "undefined") {
     return {
       month: Number(initialMonth),
@@ -41,7 +149,19 @@ function readCalendarUiState({ initialMonth, initialYear, initialDepartment }) {
   };
 }
 
-function CalendarFilterBar({ data, toolbarTitle, selectedDepartmentLabel, onSelectDepartment, onNavigate }) {
+function CalendarFilterBar({
+  data,
+  toolbarTitle,
+  selectedDepartmentLabel,
+  onSelectDepartment,
+  onNavigate,
+}: {
+  data: CalendarResponse | null;
+  toolbarTitle: string;
+  selectedDepartmentLabel: string;
+  onSelectDepartment: (department: string) => void;
+  onNavigate: (month: number, year: number) => void;
+}) {
   if (!data) {
     return null;
   }
@@ -109,6 +229,13 @@ function HolidayFilterPanel({
   onSelectAllHolidays,
   showTasks,
   onToggleTasks,
+}: {
+  holidayFilters: HolidayFilter[];
+  selectedHolidayKeys: string[];
+  onToggleHoliday: (holidayKey: string) => void;
+  onSelectAllHolidays: () => void;
+  showTasks: boolean;
+  onToggleTasks: () => void;
 }) {
   if (!holidayFilters.length) {
     return null;
@@ -158,7 +285,15 @@ function HolidayFilterPanel({
   );
 }
 
-function TaskOverviewModal({ task, canManage, onClose }) {
+function TaskOverviewModal({
+  task,
+  canManage,
+  onClose,
+}: {
+  task: CalendarEventItem | null;
+  canManage: boolean;
+  onClose: () => void;
+}) {
   if (!task) {
     return null;
   }
@@ -275,12 +410,22 @@ function TaskOverviewModal({ task, canManage, onClose }) {
   );
 }
 
-function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment }) {
+function CalendarApp({
+  endpoint,
+  initialMonth,
+  initialYear,
+  initialDepartment,
+}: {
+  endpoint: string;
+  initialMonth: string;
+  initialYear: string;
+  initialDepartment: string;
+}) {
   const initialUiState = useMemo(
     () => readCalendarUiState({ initialMonth, initialYear, initialDepartment }),
     [initialMonth, initialYear, initialDepartment]
   );
-  const [state, setState] = useState({
+  const [state, setState] = useState<CalendarAppState>({
     loading: true,
     error: "",
     data: null,
@@ -290,7 +435,7 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
   });
   const [selectedHolidayKeys, setSelectedHolidayKeys] = useState(initialUiState.holidayKeys);
   const [showTasks, setShowTasks] = useState(initialUiState.showTasks);
-  const [activeTask, setActiveTask] = useState(null);
+  const [activeTask, setActiveTask] = useState<CalendarEventItem | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -315,18 +460,18 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: CalendarResponse) => {
         setState((current) => ({
           ...current,
           loading: false,
           data,
           error: "",
           month: data.current_month,
-          year: data.display_year,
+          year: Number(data.display_year),
           department: data.selected_department || "",
         }));
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         if (error.name === "AbortError") {
           return;
         }
@@ -360,13 +505,16 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
       calendar_detail_rows: data.calendar_detail_rows || [],
       selected_department: data.selected_department || "",
       display_month: data.display_month || "",
-      display_year: data.display_year || data.year || "",
+      display_year: Number(data.display_year || data.year || new Date().getFullYear()),
     };
   }, [data]);
 
   const toolbar = useMemo(() => {
     if (!safeData) {
-      return null;
+      return {
+        title: "",
+        subtitle: "",
+      };
     }
     return {
       title: `${safeData.display_month} ${safeData.display_year}`.trim(),
@@ -394,7 +542,7 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
     if (safeData.holiday_filters?.length) {
       return [...safeData.holiday_filters].sort((a, b) => a.label.localeCompare(b.label));
     }
-    const entries = new Map();
+    const entries = new Map<string, HolidayFilter>();
     safeData.weeks.forEach((week) => {
       week.forEach((cell) => {
         cell.events.forEach((event) => {
@@ -457,7 +605,7 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
     window.history.replaceState({}, "", nextUrl);
   }, [state.month, state.year, state.department, selectedHolidayKeys, showTasks, holidayFilters]);
 
-  const navigate = (month, year) => {
+  const navigate = (month: number, year: number) => {
     setState((current) => ({
       ...current,
       month,
@@ -465,14 +613,14 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
     }));
   };
 
-  const selectDepartment = (department) => {
+  const selectDepartment = (department: string) => {
     setState((current) => ({
       ...current,
       department,
     }));
   };
 
-  const toggleHoliday = (holidayKey) => {
+  const toggleHoliday = (holidayKey: string) => {
     setSelectedHolidayKeys((current) => {
       if (current.includes(holidayKey)) {
         const next = current.filter((key) => key !== holidayKey);
@@ -490,7 +638,7 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
     setShowTasks((current) => !current);
   };
 
-  const openTaskOverview = (event, task) => {
+  const openTaskOverview = (event: React.MouseEvent<HTMLButtonElement>, task: CalendarEventItem) => {
     event.preventDefault();
     setActiveTask(task);
   };
@@ -643,7 +791,7 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
                         return showTasks;
                       }
                       if (event.kind === "holiday") {
-                        return selectedHolidayKeys.includes(event.holiday_calendar_key);
+                        return Boolean(event.holiday_calendar_key && selectedHolidayKeys.includes(event.holiday_calendar_key));
                       }
                       return true;
                     });
@@ -680,7 +828,7 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
                             type="button"
                             className={`calendar-task-pill calendar-task-pill-${event.kind} calendar-task-pill-button`}
                             onClick={(nativeEvent) => openTaskOverview(nativeEvent, event)}
-                            style={{ "--task-color": event.department_color || event.color }}
+                            style={{ "--task-color": event.department_color || event.color } as TaskColorStyle}
                           >
                             <strong>{event.title}</strong>
                             <span>{event.type_label}</span>
@@ -691,7 +839,7 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
                           <div
                             key={event.id}
                             className={`calendar-task-pill calendar-task-pill-${event.kind}`}
-                            style={{ "--task-color": event.color }}
+                            style={{ "--task-color": event.color } as TaskColorStyle}
                           >
                             <strong>{event.title}</strong>
                             <span>{event.type_label}</span>
@@ -724,9 +872,9 @@ function CalendarApp({ endpoint, initialMonth, initialYear, initialDepartment })
 const rootElement = document.getElementById("react-calendar-root");
 
 if (rootElement) {
-  const endpoint = rootElement.dataset.endpoint;
-  const initialMonth = rootElement.dataset.initialMonth;
-  const initialYear = rootElement.dataset.initialYear;
+  const endpoint = rootElement.dataset.endpoint || "";
+  const initialMonth = rootElement.dataset.initialMonth || String(new Date().getMonth() + 1);
+  const initialYear = rootElement.dataset.initialYear || String(new Date().getFullYear());
   const initialDepartment = rootElement.dataset.initialDepartment || "";
   createRoot(rootElement).render(
     <CalendarApp
