@@ -68,6 +68,19 @@ class GlobalSearchApiTests(TestCase):
         self.assertIn("Messages", categories)
         self.assertIn("Calendar", categories)
 
+    def test_v1_search_api_uses_standard_response_envelope(self):
+        self.client.force_login(self.admin_user)
+        response = self.client.get(reverse("api_v1:search"), {"q": "Elastic"})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["meta"]["api_version"], "v1")
+        self.assertEqual(payload["meta"]["source"], "database")
+        self.assertEqual(payload["data"]["query"], "Elastic")
+        self.assertTrue(payload["data"]["results"])
+        self.assertEqual(payload["errors"], [])
+
     def test_learner_search_is_company_scoped_and_self_safe(self):
         outsider_company = Company.objects.create(name="Other Co", company_code="OTHER")
         outsider_department = Department.objects.create(company=outsider_company, name="Sales", code="SALES")

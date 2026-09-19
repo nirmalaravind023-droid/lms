@@ -33,6 +33,7 @@ urlpatterns = [
     ),
     path("accounts/logout/", auth_views.LogoutView.as_view(next_page="login"), name="logout"),
     path("api/search/", GlobalSearchApiView.as_view(), name="global-search-api"),
+    path("api/v1/", include("apps.common.api_urls")),
     # The root route lands on the dashboard.
     path("", HomeDashboardView.as_view(), name="dashboard-home"),
     path("users/", include("apps.accounts.urls")),
