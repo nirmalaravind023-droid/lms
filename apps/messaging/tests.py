@@ -5,6 +5,7 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.messaging.models import Conversation, ConversationParticipant, Message
 from apps.organizations.models import Company, Department
+from apps.messaging.consumers import MessageRateLimiter, parse_chat_payload
 
 
 class MessagingFlowTests(TestCase):
@@ -78,3 +79,27 @@ class MessagingFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         contacts = list(response.context["contacts"])
         self.assertEqual(contacts, [self.other_contact])
+
+
+class ChatConsumerValidationTests(TestCase):
+    def test_parse_chat_payload_rejects_invalid_json(self):
+        valid, body, error = parse_chat_payload("{bad json")
+
+        self.assertFalse(valid)
+        self.assertEqual(body, "")
+        self.assertEqual(error, "Invalid message payload.")
+
+    def test_parse_chat_payload_rejects_overlong_messages(self):
+        valid, body, error = parse_chat_payload('{"message": "' + ("x" * 2001) + '"}')
+
+        self.assertFalse(valid)
+        self.assertEqual(body, "")
+        self.assertEqual(error, "Message is too long.")
+
+    def test_message_rate_limiter_blocks_excess_messages(self):
+        limiter = MessageRateLimiter(limit=2, window_seconds=60)
+
+        self.assertTrue(limiter.allow(now=100))
+        self.assertTrue(limiter.allow(now=101))
+        self.assertFalse(limiter.allow(now=102))
+        self.assertTrue(limiter.allow(now=161))
