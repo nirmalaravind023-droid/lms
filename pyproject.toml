@@ -1,0 +1,15 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-exclude = [
+  ".venv",
+  ".python_packages",
+  "node_modules",
+  "archived_unused_folders",
+  "static/js/react/calendar-board.js",
+]
+
+[tool.ruff.lint]
+# Establish a safe baseline first: detect syntax and undefined-name failures
+# without reformatting the existing application in this maintenance change.
+select = ["E9", "F63", "F7", "F82"]

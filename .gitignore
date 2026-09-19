@@ -16,3 +16,10 @@ htmlcov/
 node_modules/
 dist/
 build/
+*.log
+.vscode/
+.sixth/
+archived_unused_folders/loose_media_duplicates/
+frontend/node_modules/
+frontend/dist/
+frontend/build/

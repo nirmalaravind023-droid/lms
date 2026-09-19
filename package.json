@@ -4,13 +4,16 @@
   "version": "1.0.0",
   "scripts": {
     "build:calendar": "node frontend/build.mjs",
-    "build:frontend": "npm run build:calendar"
+    "build:frontend": "npm run build:calendar",
+    "lint:frontend": "eslint frontend/src/calendar-board.jsx"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "esbuild": "^0.25.3"
+    "@eslint/js": "^10.0.1",
+    "esbuild": "^0.25.3",
+    "eslint": "^10.11.0"
   }
 }
