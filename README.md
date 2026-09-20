@@ -91,6 +91,17 @@ The sample environment uses SQLite. To use PostgreSQL, set `DATABASE_ENGINE` to 
 
 See [environment configuration](docs/environment.md) for every variable and safe development defaults.
 
+### Move local SQLite data to PostgreSQL
+
+Use the migration helper only after PostgreSQL is running and the `POSTGRES_*` values in `.env` are valid. The helper exports `db.sqlite3`, runs PostgreSQL migrations, imports the data, verifies row counts, and only then can archive the SQLite file.
+
+```bash
+python scripts/migrate_sqlite_to_postgres.py
+python scripts/migrate_sqlite_to_postgres.py --archive-sqlite-after-import
+```
+
+The archive step moves `db.sqlite3` into `.db-backups/` after a verified import. Temporary fixtures and local database backups are ignored by Git.
+
 ### Demo/sample data
 
 A migrated database has no users or courses yet. There is no bundled fixture set; create a working account with the built-in management command instead:

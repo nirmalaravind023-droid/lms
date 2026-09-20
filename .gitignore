@@ -6,6 +6,8 @@ __pycache__/
 *.pyd
 *.sqlite3
 .env
+.db-backups/
+.migration-fixtures/
 media/
 staticfiles/
 .mypy_cache/
