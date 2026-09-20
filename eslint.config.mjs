@@ -2,7 +2,7 @@ import js from "@eslint/js";
 
 export default [
   {
-    ignores: ["node_modules/**", "static/js/react/calendar-board.js", "archived_unused_folders/**"],
+    ignores: ["node_modules/**", "static/js/react/calendar-board.js"],
   },
   js.configs.recommended,
   {

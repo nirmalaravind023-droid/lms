@@ -261,8 +261,6 @@ LMS/ (Root Directory)
 │           ├── *.srt                         # SRT format
 │           └── (30+ subtitle files)
 │
-├── 📁 services/api/                          # Separate API Service
-│   └── package.json                          # API service config
 │
 ├── 📁 streamlit_dashboard/                   # Analytics Dashboard
 │   ├── app.py                                # Streamlit app
@@ -717,17 +715,6 @@ media/
 
 ---
 
-## `/services/api/` - Legacy/Separate API Service
-
-**Purpose:** Potential standalone API service (minimal in current project).
-
-| File | Purpose |
-|------|---------|
-| `package.json` | API service NPM configuration |
-
-*Note: Most API logic is in Django apps.*
-
----
 
 ## `/streamlit_dashboard/` - Analytics Dashboard
 

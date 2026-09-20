@@ -5,7 +5,6 @@ extend-exclude = [
   ".venv",
   ".python_packages",
   "node_modules",
-  "archived_unused_folders",
   "static/js/react/calendar-board.js",
 ]
 
