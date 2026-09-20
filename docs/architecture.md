@@ -1,5 +1,7 @@
 # LMS Architecture & Implementation Roadmap
 
+> Current implementation note: this file is a roadmap and future-architecture planning document. The active repository is a Django monolith with Django templates, static JavaScript, Django Channels, local media storage, SQLite-by-default local development, and optional PostgreSQL/Redis through configuration. For the current source-of-truth architecture, use [Architecture overview](architecture-overview.md).
+
 User-facing note: many LMS screens now use the word `Section` even where backend architecture notes still use `Course`.
 
 ## Overview
