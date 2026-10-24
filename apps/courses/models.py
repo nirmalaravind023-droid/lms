@@ -574,7 +574,7 @@ class CourseNotification(TimeStampedModel):
             return "learning_update"
         if "course updated" in message or "updated" in message:
             return "course_updated"
-        if "new course added" in message or "new course" in message:
+        if "new course added" in message or "new course" in message or "new section added" in message:
             return "course_added"
         if "congratulations" in message or "approved" in message:
             return "approval_update"

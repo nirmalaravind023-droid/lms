@@ -173,6 +173,10 @@ class LessonForm(forms.ModelForm):
 
         if lesson_type == Lesson.LessonType.ARTICLE and not content:
             self.add_error("content", "Write the article or learning notes for this lesson.")
+        MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB
+        for field_name, file_obj in [("media_file", cleaned_data.get("media_file")), ("article_image", cleaned_data.get("article_image")), ("subtitle_file", cleaned_data.get("subtitle_file"))]:
+            if hasattr(file_obj, "size") and file_obj.size > MAX_UPLOAD_BYTES:
+                self.add_error(field_name, "File too large. Maximum upload size is 200 MB.")
         if article_image_name and not file_has_allowed_extension(article_image_name, self.IMAGE_FILE_EXTENSIONS):
             self.add_error("article_image", "Article cover image should be JPG, PNG, WEBP, or GIF.")
         if lesson_type == Lesson.LessonType.LINK and not external_url:

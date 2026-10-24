@@ -132,9 +132,36 @@ def get_holiday_calendars() -> list[dict[str, str]]:
     ]
 
 
+# Fixed-date regional Hindu festivals not always covered by the holidays library or Google feeds.
+_STATIC_HINDU_FIXED_FESTIVALS: list[tuple[int, int, str]] = [
+    (1, 13, "Lohri"),  # Punjabi harvest festival, always Jan 13
+    (1, 15, "Thiruvalluvar Day / Mattu Pongal"),  # Day after Pongal
+]
+
+
 def get_india_holidays(year: int) -> list[dict[str, str]]:
     seen: set[tuple[str, str, str]] = set()
     records: list[dict[str, str]] = []
+
+    # Inject static fixed-date Hindu festivals before library/feed deduplication.
+    for month, day, label in _STATIC_HINDU_FIXED_FESTIVALS:
+        iso_date = f"{year}-{month:02d}-{day:02d}"
+        record_key = (iso_date, label.lower(), "hinduism")
+        if record_key not in seen:
+            seen.add(record_key)
+            calendar_meta = HOLIDAY_CALENDAR_META["hinduism"]
+            records.append(
+                {
+                    "date": iso_date,
+                    "label": label,
+                    "scope": calendar_meta["label"],
+                    "calendar_key": "hinduism",
+                    "calendar_label": calendar_meta["label"],
+                    "color": calendar_meta["color"],
+                    "estimated": "false",
+                    "source": "Static",
+                }
+            )
 
     for calendar_key in GOOGLE_CALENDAR_FEEDS:
         for item in _parse_google_ics_events(calendar_key, year):

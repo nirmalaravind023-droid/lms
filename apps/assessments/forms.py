@@ -28,6 +28,11 @@ class QuizBuilderForm(forms.ModelForm):
         required=False,
         label="Assign To Department",
     )
+    assign_learners = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        label="Assign To Learners",
+    )
     assign_due_date = forms.DateField(
         required=False,
         label="Assignment Due Date",
@@ -71,13 +76,16 @@ class QuizBuilderForm(forms.ModelForm):
         categories = self.fields["category"].queryset.order_by("name")
         courses = self.fields["course"].queryset.order_by("title")
         modules = self.fields["module"].queryset.select_related("course").order_by("course__title", "title")
+        learners = User.objects.filter(role=User.Role.LEARNER).select_related("department")
         if active_company:
             departments = departments.filter(company=active_company)
             categories = categories.filter(company=active_company)
             courses = courses.filter(company=active_company)
             modules = modules.filter(course__company=active_company)
+            learners = learners.filter(company=active_company)
         self.fields["department"].queryset = departments
         self.fields["assign_department"].queryset = departments
+        self.fields["assign_learners"].queryset = learners
         self.fields["department"].empty_label = "Select Department"
         self.fields["assign_department"].empty_label = "Select Department"
         self.fields["department"].label_from_instance = lambda department: department.name
@@ -113,6 +121,12 @@ class QuizBuilderForm(forms.ModelForm):
             quiz_department = department
         if assign_department and quiz_department and assign_department.id != quiz_department.id:
             self.add_error("assign_department", "Assign the quiz only to the same department as the selected quiz course.")
+        assign_learners = cleaned_data.get("assign_learners")
+        if assign_learners and quiz_department:
+            for learner in assign_learners:
+                if learner.department_id and learner.department_id != quiz_department.id:
+                    self.add_error("assign_learners", "All assigned learners must belong to the same department as the quiz.")
+                    break
         return cleaned_data
 
 
