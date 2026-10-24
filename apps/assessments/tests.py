@@ -201,8 +201,8 @@ class QuizDepartmentAlignmentTests(TestCase):
         self.assertEqual(overview["total_attendees"], 1)
         self.assertEqual(overview["total_passed"], 1)
         self.assertContains(response, "People Attended")
-        self.assertContains(response, "Assigned 2")
-        self.assertContains(response, "Attended 1")
+        self.assertContains(response, "2 assignment")
+        self.assertContains(response, "1 People Attended")
 
     def test_learner_sees_department_quiz_in_assessment_cards(self):
         quiz = Quiz.objects.create(
@@ -631,7 +631,7 @@ class QuizDepartmentAlignmentTests(TestCase):
         response = self.client.get(reverse("quiz-detail", kwargs={"quiz_id": quiz.id}))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Resume Saved Attempt")
+        self.assertContains(response, "Resume Attempt")
         self.assertContains(response, "1 Active")
 
     def test_start_quiz_creates_in_progress_attempt_in_sql(self):

@@ -276,7 +276,7 @@ class CalendarHolidayTests(TestCase):
         self.assertEqual(response.status_code, 302)
         notification = CourseNotification.objects.filter(recipient=self.learner).order_by("-created_at").first()
         self.assertIsNotNone(notification)
-        self.assertIn("New course added", notification.message)
+        self.assertIn("New section added", notification.message)
         self.assertEqual(notification.badge_label, "New Course Added")
         self.assertEqual(notification.action_label, "Open New Course")
 
@@ -299,7 +299,7 @@ class CalendarHolidayTests(TestCase):
         self.assertEqual(response.status_code, 302)
         notification = CourseNotification.objects.filter(
             recipient=self.learner,
-            message__icontains="Course updated",
+            message__icontains="Section updated",
         ).order_by("-created_at").first()
         self.assertIsNotNone(notification)
         self.assertEqual(notification.badge_label, "Course Updated")
@@ -481,9 +481,9 @@ class LessonAuthoringTests(TestCase):
         response = self.client.get(reverse("quiz-create"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Question Section")
-        self.assertContains(response, "Course Connection Status")
-        self.assertContains(response, "This builder reads from the courses and modules you already created.")
+        self.assertContains(response, "Section names are supported directly on each question")
+        self.assertContains(response, "connected courses and modules")
+        self.assertContains(response, "Add Question")
 
     def test_course_slug_is_made_globally_unique_across_companies(self):
         other_company = Company.objects.create(name="Other Co", company_code="OTHCO")
